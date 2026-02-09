@@ -29,23 +29,40 @@ class PerformanceTest:
         
     async def setup(self):
         """Setup: Create test user and get auth token"""
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Register user
-            user_data = {
-                "email": self.test_user_email,
-                "password": "PerfTest123!",
-                "full_name": "Performance Test User"
-            }
-            await client.post(f"{self.base_url}/api/v1/auth/register", json=user_data)
-            
-            # Login
-            login_data = {
-                "username": self.test_user_email,
-                "password": "PerfTest123!"
-            }
-            response = await client.post(f"{self.base_url}/api/v1/auth/login", json=login_data)
-            if response.status_code == 200:
-                self.access_token = response.json().get("access_token")
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Register user
+                user_data = {
+                    "email": self.test_user_email,
+                    "password": "PerfTest123!",
+                    "full_name": "Performance Test User"
+                }
+                reg_response = await client.post(f"{self.base_url}/api/v1/auth/register", json=user_data)
+                
+                if reg_response.status_code not in [200, 201]:
+                    print(f"⚠️  Registration failed: {reg_response.status_code} - {reg_response.text}")
+                    return
+                
+                # Login
+                login_data = {
+                    "username": self.test_user_email,
+                    "password": "PerfTest123!"
+                }
+                login_response = await client.post(f"{self.base_url}/api/v1/auth/login", json=login_data)
+                
+                if login_response.status_code == 200:
+                    data = login_response.json()
+                    self.access_token = data.get("access_token")
+                    if self.access_token:
+                        print(f"✅ Authentication successful")
+                    else:
+                        print(f"⚠️  No access_token in response: {data}")
+                else:
+                    print(f"⚠️  Login failed: {login_response.status_code} - {login_response.text}")
+        except Exception as e:
+            print(f"⚠️  Setup failed: {e}")
+            import traceback
+            traceback.print_exc()
     
     def log_test(self, name: str, metrics: Dict[str, Any]):
         """Log test results"""
