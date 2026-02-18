@@ -11,33 +11,13 @@ from enum import Enum
 from backend.integrations.llm.llm_service import LLMService
 from backend.economy.resource_marketplace import ResourceMarketplace, ResourceType
 from backend.core.event_bus.nats_bus import NATSEventBus
-from backend.integrations.observability.telemetry import get_tracer, get_meter
+from backend.integrations.observability.telemetry import get_tracer
+from backend.integrations.observability.prometheus_metrics import get_metrics
 from backend.models.domain.agent import AgentStatus
 from backend.models.domain.mission import MissionStatus
 
 tracer = get_tracer(__name__)
-meter = get_meter(__name__)
-
-# Metrics (handle None meter gracefully for v4.5 compatibility)
-if meter is not None:
-    mission_counter = meter.create_counter(
-        "omnipath_missions_total",
-        description="Total number of missions executed"
-    )
-    
-    mission_duration = meter.create_histogram(
-        "omnipath_mission_duration_seconds",
-        description="Mission execution duration in seconds"
-    )
-    
-    agent_invocations = meter.create_counter(
-        "omnipath_agent_invocations_total",
-        description="Total agent invocations by type"
-    )
-else:
-    mission_counter = None
-    mission_duration = None
-    agent_invocations = None
+prom_metrics = get_metrics()
 
 
 class MissionComplexity(Enum):
@@ -148,6 +128,8 @@ class MissionExecutor:
                 
                 # Phase 3: Execute based on complexity
                 await self._update_status(mission_id, "RUNNING", step="executing")
+                prom_metrics.record_mission_start(complexity=plan.get("complexity", "simple"))
+                
                 if plan["complexity"] == MissionComplexity.SWARM.value:
                     result = await self._execute_with_swarm(
                         mission_id, plan, tenant_id
@@ -169,12 +151,13 @@ class MissionExecutor:
                         mission_id, plan, result, tenant_id
                     )
                 
-                # Record metrics (only if meter is available)
+                # Record metrics
                 duration = (datetime.utcnow() - start_time).total_seconds()
-                if mission_duration:
-                    mission_duration.record(duration)
-                if mission_counter:
-                    mission_counter.add(1, {"status": result["status"]})
+                prom_metrics.record_mission_complete(
+                    status=result.get("status", "SUCCESS"),
+                    complexity=plan.get("complexity", "simple"),
+                    duration_seconds=duration
+                )
                 
                 # Update final status
                 final_status = "COMPLETED" if result["status"] == "SUCCESS" else "FAILED"
@@ -197,8 +180,12 @@ class MissionExecutor:
                 
             except Exception as e:
                 span.record_exception(e)
-                if mission_counter:
-                    mission_counter.add(1, {"status": "ERROR"})
+                duration = (datetime.utcnow() - start_time).total_seconds()
+                prom_metrics.record_mission_complete(
+                    status="ERROR",
+                    complexity="simple",
+                    duration_seconds=duration
+                )
                 
                 # Update status to FAILED
                 await self._update_status(mission_id, "FAILED", error=str(e))
@@ -217,8 +204,7 @@ class MissionExecutor:
     ) -> Dict[str, Any]:
         """Guardian validates mission safety"""
         with tracer.start_as_current_span("guardian_validate"):
-            if agent_invocations:
-                agent_invocations.add(1, {"agent": "guardian"})
+            prom_metrics.record_agent_invocation(agent_type="guardian", model="gpt-4")
             
             # Get Guardian's LLM
             llm = self.llm_service.get_llm("guardian", tenant_id)
@@ -279,8 +265,7 @@ Respond in JSON format:
     ) -> Dict[str, Any]:
         """Commander creates execution plan"""
         with tracer.start_as_current_span("commander_plan"):
-            if agent_invocations:
-                agent_invocations.add(1, {"agent": "commander"})
+            prom_metrics.record_agent_invocation(agent_type="commander", model="gpt-4")
             
             llm = self.llm_service.get_llm("commander", tenant_id)
             
@@ -348,8 +333,7 @@ Respond in JSON format:
             
             # Execute each step
             for i, step in enumerate(plan["steps"]):
-                if agent_invocations:
-                    agent_invocations.add(1, {"agent": "executor"})
+                prom_metrics.record_agent_invocation(agent_type="executor", model=model_name)
                 
                 # Charge for resource usage
                 await self.marketplace.charge(
@@ -409,10 +393,10 @@ Respond in JSON format:
         tenant_id: str
     ) -> Dict[str, Any]:
         """Execute a single swarm agent"""
-        if agent_invocations:
-            agent_invocations.add(1, {"agent": "swarm_agent"})
+        model_name = "gpt-3.5-turbo"
+        prom_metrics.record_agent_invocation(agent_type="swarm_agent", model=model_name)
         
-        llm = self.llm_factory.get_llm_by_model("gpt-3.5-turbo", tenant_id)
+        llm = self.llm_service.get_llm_by_model(model_name, tenant_id)
         
         await self.marketplace.charge(
             tenant_id=tenant_id,
@@ -441,8 +425,7 @@ Respond in JSON format:
     ):
         """Archivist records mission for future learning"""
         with tracer.start_as_current_span("archivist_archive"):
-            if agent_invocations:
-                agent_invocations.add(1, {"agent": "archivist"})
+            prom_metrics.record_agent_invocation(agent_type="archivist", model="gpt-4")
             
             # Publish mission completion event
             await self.event_bus.publish(

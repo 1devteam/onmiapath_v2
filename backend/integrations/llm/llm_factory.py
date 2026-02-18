@@ -11,9 +11,12 @@ Provides a unified interface for creating LLM instances from multiple providers:
 Supports easy model switching via configuration.
 """
 
-from typing import Optional, Dict, Any
+import time
+from typing import Optional, Dict, Any, List
 from enum import Enum
 from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import BaseMessage
+from backend.integrations.observability.prometheus_metrics import get_metrics
 
 
 class LLMProvider(str, Enum):
@@ -23,6 +26,69 @@ class LLMProvider(str, Enum):
     GOOGLE = "google"
     XAI = "xai"  # Grok
     OLLAMA = "ollama"
+
+
+class MetricsWrappedLLM:
+    """Wrapper for LLM instances to track Prometheus metrics"""
+    
+    def __init__(self, llm: BaseChatModel, provider: str, model: str):
+        self.llm = llm
+        self.provider = provider
+        self.model = model
+        self.prom_metrics = get_metrics()
+
+    def __getattr__(self, name):
+        return getattr(self.llm, name)
+
+    async def ainvoke(self, input: Any, config: Optional[Any] = None, **kwargs) -> BaseMessage:
+        start_time = time.time()
+        try:
+            response = await self.llm.ainvoke(input, config, **kwargs)
+            latency = time.time() - start_time
+            
+            # Extract token usage if available
+            prompt_tokens = 0
+            completion_tokens = 0
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                prompt_tokens = response.usage_metadata.get('input_tokens', 0)
+                completion_tokens = response.usage_metadata.get('output_tokens', 0)
+            elif hasattr(response, 'response_metadata') and 'token_usage' in response.response_metadata:
+                usage = response.response_metadata['token_usage']
+                prompt_tokens = usage.get('prompt_tokens', 0)
+                completion_tokens = usage.get('completion_tokens', 0)
+
+            # Record metrics
+            self.prom_metrics.record_llm_call(
+                provider=self.provider,
+                model=self.model,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cost_usd=0.0,  # Cost calculation could be added here
+                latency_seconds=latency
+            )
+            return response
+        except Exception as e:
+            # You could record errors here too
+            raise e
+
+    def invoke(self, input: Any, config: Optional[Any] = None, **kwargs) -> BaseMessage:
+        start_time = time.time()
+        try:
+            response = self.llm.invoke(input, config, **kwargs)
+            latency = time.time() - start_time
+            
+            # Record basic metrics for sync calls
+            self.prom_metrics.record_llm_call(
+                provider=self.provider,
+                model=self.model,
+                prompt_tokens=0,
+                completion_tokens=0,
+                cost_usd=0.0,
+                latency_seconds=latency
+            )
+            return response
+        except Exception as e:
+            raise e
 
 
 class LLMFactory:
@@ -68,23 +134,27 @@ class LLMFactory:
         if model is None:
             model = LLMFactory.DEFAULT_MODELS.get(provider)
         
+        llm = None
         if provider == LLMProvider.OPENAI:
-            return LLMFactory._create_openai(model, temperature, max_tokens, api_key, **kwargs)
+            llm = LLMFactory._create_openai(model, temperature, max_tokens, api_key, **kwargs)
         
         elif provider == LLMProvider.ANTHROPIC:
-            return LLMFactory._create_anthropic(model, temperature, max_tokens, api_key, **kwargs)
+            llm = LLMFactory._create_anthropic(model, temperature, max_tokens, api_key, **kwargs)
         
         elif provider == LLMProvider.GOOGLE:
-            return LLMFactory._create_google(model, temperature, max_tokens, api_key, **kwargs)
+            llm = LLMFactory._create_google(model, temperature, max_tokens, api_key, **kwargs)
         
         elif provider == LLMProvider.XAI:
-            return LLMFactory._create_xai(model, temperature, max_tokens, api_key, **kwargs)
+            llm = LLMFactory._create_xai(model, temperature, max_tokens, api_key, **kwargs)
         
         elif provider == LLMProvider.OLLAMA:
-            return LLMFactory._create_ollama(model, temperature, max_tokens, base_url, **kwargs)
+            llm = LLMFactory._create_ollama(model, temperature, max_tokens, base_url, **kwargs)
         
         else:
             raise ValueError(f"Unsupported provider: {provider}")
+
+        # Wrap with metrics
+        return MetricsWrappedLLM(llm, provider, model)
     
     @staticmethod
     def _create_openai(
