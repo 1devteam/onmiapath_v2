@@ -1,3 +1,10 @@
+## [7.1.1] — 2026-03-13
+
+### Bug Fixes & Improvements
+- fix(compose): pass all LLM provider env vars to backend container (`8a241875`)
+
+---
+
 ## [7.1.0] — 2026-03-07
 
 ### Features
