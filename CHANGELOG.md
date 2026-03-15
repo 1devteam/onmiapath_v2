@@ -1,3 +1,10 @@
+## [7.1.2] — 2026-03-15
+
+### Bug Fixes & Improvements
+- fix(frontend): fix mission launch — correct API fields and auto-create agent (`29ac39fe`)
+
+---
+
 ## [7.1.1] — 2026-03-13
 
 ### Bug Fixes & Improvements
