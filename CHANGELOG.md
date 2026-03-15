@@ -1,3 +1,10 @@
+## [7.1.3] — 2026-03-15
+
+### Bug Fixes & Improvements
+- fix(frontend): resolve TypeScript type errors in IntelligencePage (`97389147`)
+
+---
+
 ## [7.1.2] — 2026-03-15
 
 ### Bug Fixes & Improvements
