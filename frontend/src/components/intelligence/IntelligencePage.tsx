@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../layout/Layout';
 import { Card, CardTitle, Btn, Textarea } from '../layout/UI';
-import { missions } from '../../services/api';
+import { missions, agents } from '../../services/api';
 
 const QUICK_MISSIONS = [
   {
@@ -24,17 +24,64 @@ const QUICK_MISSIONS = [
   },
 ];
 
+/** Extract a human-readable message from any error shape */
+function extractError(err: unknown): string {
+  if (!err) return '';
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return 'An unexpected error occurred.';
+}
+
 export default function IntelligencePage() {
   const [goal, setGoal] = useState('');
   const [launched, setLaunched] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { mutate, isPending, error } = useMutation({
-    mutationFn: (g: string) => missions.create({ goal: g, tenant_id: 'default' }),
+  // Fetch the user's agents so we can pick one for mission launch
+  const { data: agentList } = useQuery({
+    queryKey: ['agents'],
+    queryFn: () => agents.list(),
+    staleTime: 30_000,
+  });
+
+  // Auto-create a default Commander agent mutation (used when user has none)
+  const createAgentMutation = useMutation({
+    mutationFn: () =>
+      agents.create({
+        name: 'Commander',
+        agent_type: 'commander',
+        model: 'gpt-4o',
+        description: 'Default commander agent — auto-created on first mission launch.',
+      }),
+  });
+
+  const launchMutation = useMutation({
+    mutationFn: async (g: string) => {
+      // Resolve agent_id: use existing agent or create one
+      let agentId: string | undefined;
+      const list = Array.isArray(agentList) ? agentList : [];
+      if (list.length > 0) {
+        agentId = list[0].agent_id ?? list[0].id;
+      } else {
+        const newAgent = await createAgentMutation.mutateAsync();
+        agentId = newAgent.agent_id ?? newAgent.id;
+      }
+      if (!agentId) throw new Error('Could not resolve an agent to run this mission.');
+      return missions.create({
+        objective: g,
+        agent_id: agentId,
+        priority: 'high',
+        max_steps: 10,
+        timeout_seconds: 300,
+      });
+    },
     onSuccess: (data) => {
-      setLaunched(data.mission_id);
+      setLaunched(data.id ?? (data as unknown as { mission_id: string }).mission_id);
     },
   });
+
+  const isPending = launchMutation.isPending || createAgentMutation.isPending;
+  const errorMsg = extractError(launchMutation.error);
 
   return (
     <Layout
@@ -53,7 +100,7 @@ export default function IntelligencePage() {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Btn
             variant="primary"
-            onClick={() => { if (goal.trim()) mutate(goal); }}
+            onClick={() => { if (goal.trim()) launchMutation.mutate(goal); }}
             disabled={isPending || !goal.trim()}
           >
             {isPending ? 'Launching…' : '⚡ Launch Mission'}
@@ -63,8 +110,8 @@ export default function IntelligencePage() {
               View Mission →
             </Btn>
           )}
-          {error && (
-            <span style={{ color: 'var(--danger)', fontSize: 12 }}>{(error as Error).message}</span>
+          {errorMsg && (
+            <span style={{ color: 'var(--danger)', fontSize: 12 }}>{errorMsg}</span>
           )}
         </div>
       </Card>
@@ -88,7 +135,7 @@ export default function IntelligencePage() {
               <Btn variant="ghost" size="sm" onClick={() => setGoal(qm.goal)}>
                 Use Template
               </Btn>
-              <Btn variant="primary" size="sm" onClick={() => mutate(qm.goal)} disabled={isPending}>
+              <Btn variant="primary" size="sm" onClick={() => launchMutation.mutate(qm.goal)} disabled={isPending}>
                 Launch →
               </Btn>
             </div>

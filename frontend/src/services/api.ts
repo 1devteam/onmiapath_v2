@@ -90,7 +90,14 @@ export const missions = {
     return request<PaginatedResponse<Mission>>(`/missions${qs ? '?' + qs : ''}`);
   },
   get: (id: string) => request<Mission>(`/missions/${id}`),
-  create: (data: { goal: string; tenant_id?: string; budget_limit?: number }) =>
+  create: (data: {
+    objective: string;
+    agent_id: string;
+    priority?: string;
+    max_steps?: number;
+    timeout_seconds?: number;
+    budget?: number;
+  }) =>
     request<Mission>('/missions', { method: 'POST', body: JSON.stringify(data) }),
   cancel: (id: string) =>
     request<Mission>(`/missions/${id}/cancel`, { method: 'POST' }),
