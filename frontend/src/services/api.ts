@@ -91,14 +91,25 @@ export const missions = {
   },
   get: (id: string) => request<Mission>(`/missions/${id}`),
   create: (data: {
-    objective: string;
+    goal: string;
     agent_id: string;
+    tenant_id?: string;
     priority?: string;
     max_steps?: number;
     timeout_seconds?: number;
-    budget?: number;
+    budget_limit?: number;
   }) =>
-    request<Mission>('/missions', { method: 'POST', body: JSON.stringify(data) }),
+    request<Mission>('/missions', {
+      method: 'POST',
+      body: JSON.stringify({
+        objective: data.goal,
+        agent_id: data.agent_id,
+        priority: data.priority ?? 'normal',
+        max_steps: data.max_steps ?? 10,
+        timeout_seconds: data.timeout_seconds ?? 300,
+        ...(data.budget_limit ? { budget: data.budget_limit } : {}),
+      }),
+    }),
   cancel: (id: string) =>
     request<Mission>(`/missions/${id}/cancel`, { method: 'POST' }),
   getResult: (id: string) => request<Mission>(`/missions/${id}`),

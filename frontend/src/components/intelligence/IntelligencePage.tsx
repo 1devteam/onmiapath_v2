@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../layout/Layout';
 import { Card, CardTitle, Btn, Textarea } from '../layout/UI';
 import { missions, agents } from '../../services/api';
+import type { Agent, Mission } from '../../types';
 
 const QUICK_MISSIONS = [
   {
@@ -24,7 +25,7 @@ const QUICK_MISSIONS = [
   },
 ];
 
-/** Extract a human-readable message from any error shape */
+/** Safely extract a human-readable string from any error shape */
 function extractError(err: unknown): string {
   if (!err) return '';
   if (err instanceof Error) return err.message;
@@ -38,45 +39,44 @@ export default function IntelligencePage() {
   const navigate = useNavigate();
 
   // Fetch the user's agents so we can pick one for mission launch
-  const { data: agentList } = useQuery({
+  const { data: agentList } = useQuery<Agent[]>({
     queryKey: ['agents'],
     queryFn: () => agents.list(),
     staleTime: 30_000,
   });
 
-  // Auto-create a default Commander agent mutation (used when user has none)
-  const createAgentMutation = useMutation({
+  // Auto-create a default Commander agent when user has none
+  const createAgentMutation = useMutation<Agent>({
     mutationFn: () =>
       agents.create({
         name: 'Commander',
         agent_type: 'commander',
         model: 'gpt-4o',
-        description: 'Default commander agent — auto-created on first mission launch.',
+        capabilities: ['research', 'analysis', 'planning'],
       }),
   });
 
-  const launchMutation = useMutation({
+  const launchMutation = useMutation<Mission, Error, string>({
     mutationFn: async (g: string) => {
-      // Resolve agent_id: use existing agent or create one
-      let agentId: string | undefined;
-      const list = Array.isArray(agentList) ? agentList : [];
+      // Resolve agent_id: use existing agent or auto-create one
+      const list: Agent[] = Array.isArray(agentList) ? agentList : [];
+      let agentId: string;
       if (list.length > 0) {
-        agentId = list[0].agent_id ?? list[0].id;
+        agentId = list[0].agent_id;
       } else {
         const newAgent = await createAgentMutation.mutateAsync();
-        agentId = newAgent.agent_id ?? newAgent.id;
+        agentId = newAgent.agent_id;
       }
-      if (!agentId) throw new Error('Could not resolve an agent to run this mission.');
       return missions.create({
-        objective: g,
+        goal: g,
         agent_id: agentId,
         priority: 'high',
         max_steps: 10,
         timeout_seconds: 300,
       });
     },
-    onSuccess: (data) => {
-      setLaunched(data.id ?? (data as unknown as { mission_id: string }).mission_id);
+    onSuccess: (data: Mission) => {
+      setLaunched(data.mission_id);
     },
   });
 
