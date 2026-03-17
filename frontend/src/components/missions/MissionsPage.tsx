@@ -32,11 +32,31 @@ function NewMissionModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => missions.create({
-      goal,
-      tenant_id: 'default',
-      budget_limit: budget ? parseInt(budget) : undefined,
-    }),
+    mutationFn: async () => {
+      // Resolve agent_id: use existing agent or auto-create Commander
+      let agentId: string;
+      try {
+        const agentList: Agent[] = await agents.list();
+        if (agentList && agentList.length > 0) {
+          agentId = agentList[0].agent_id;
+        } else {
+          const newAgent: Agent = await agents.create({
+            name: 'Commander',
+            agent_type: 'commander',
+            model: 'gpt-4o',
+            capabilities: ['research', 'analysis', 'planning'],
+          });
+          agentId = newAgent.agent_id;
+        }
+      } catch {
+        throw new Error('Could not resolve an agent. Please create an agent first.');
+      }
+      return missions.create({
+        goal,
+        agent_id: agentId,
+        budget_limit: budget ? parseInt(budget) : undefined,
+      });
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['missions'] });
       queryClient.invalidateQueries({ queryKey: ['missions-recent'] });
