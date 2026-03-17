@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../layout/Layout';
 import { Card, CardTitle, Badge, Btn, Table, Tr, Td, Spinner, EmptyState, Textarea, Input } from '../layout/UI';
-import { missions } from '../../services/api';
-import type { Mission } from '../../types';
+import { missions, agents } from '../../services/api';
+import type { Mission, Agent } from '../../types';
 
 function statusVariant(status: string) {
   if (status === 'completed') return 'active';
