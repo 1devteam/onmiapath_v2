@@ -1,3 +1,10 @@
+## [7.1.4] — 2026-03-17
+
+### Bug Fixes & Improvements
+- fix(frontend): add agent resolution to MissionsPage NewMissionModal (`70c0a702`)
+
+---
+
 ## [7.1.3] — 2026-03-15
 
 ### Bug Fixes & Improvements
