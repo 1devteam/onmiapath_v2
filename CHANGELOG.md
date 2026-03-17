@@ -1,3 +1,10 @@
+## [7.1.5] — 2026-03-17
+
+### Bug Fixes & Improvements
+- fix(frontend): wire agent_id into MissionsPage NewMissionModal (`9e2e6607`)
+
+---
+
 ## [7.1.4] — 2026-03-17
 
 ### Bug Fixes & Improvements
