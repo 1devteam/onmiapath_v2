@@ -8,9 +8,9 @@ scrape_configs:
       - targets: ['backend:8000']
     metrics_path: '/metrics'
 
-  - job_name: 'nats-exporter'
+  - job_name: 'nats'
     static_configs:
-      - targets: ['nats-exporter:7777']
+      - targets: ['nats:8222']
     metrics_path: '/metrics'
 
   - job_name: 'prometheus'

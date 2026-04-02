@@ -48,21 +48,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # NATS Prometheus Exporter
-  nats-exporter:
-    image: natsio/prometheus-nats-exporter:0.19.1
-    container_name: omnipath-nats-exporter
-    command: ["-port", "7777", "-nats.server", "nats:4222"]
-    ports:
-      - "7777:7777"
-    depends_on:
-      - nats
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:7777/metrics"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Jaeger (Distributed Tracing)
   jaeger:
     image: jaegertracing/all-in-one:1.53
@@ -108,9 +93,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
-      - ./grafana/provisioning/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     depends_on:
       - prometheus
     healthcheck:
@@ -145,7 +128,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
-    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 4 --reload
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   postgres_data:

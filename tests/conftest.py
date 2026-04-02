@@ -2,7 +2,6 @@
 Pytest Configuration and Shared Fixtures
 Provides reusable test fixtures for all test modules
 """
-
 import pytest
 import asyncio
 from typing import Generator, AsyncGenerator
@@ -13,13 +12,11 @@ from backend.main import app
 from backend.models.domain.user import User, UserRole
 from backend.middleware.auth.auth_middleware import create_access_token
 from backend.economy.resource_marketplace import ResourceMarketplace
-from backend.config.settings import Settings
 
 
 # ============================================================================
 # Pytest Configuration
 # ============================================================================
-
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -29,29 +26,15 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
-def test_settings():
-    """
-    Shared settings instance for all tests
-    Uses a fixed JWT secret key to ensure token signing/verification works
-    """
-    import os
-
-    os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-jwt-tokens-do-not-use-in-production"
-    os.environ["SECRET_KEY"] = "test-secret-key-do-not-use-in-production"
-    return Settings()
-
-
 # ============================================================================
 # Application Fixtures
 # ============================================================================
-
 
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
     """
     Synchronous test client for FastAPI
-
+    
     Usage:
         def test_health(client):
             response = client.get("/health")
@@ -65,7 +48,7 @@ def client() -> Generator[TestClient, None, None]:
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """
     Asynchronous test client for FastAPI
-
+    
     Usage:
         async def test_health(async_client):
             response = await async_client.get("http://test/health")
@@ -79,21 +62,20 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
 # User & Auth Fixtures
 # ============================================================================
 
-
 @pytest.fixture
 def mock_user() -> User:
     """
     Create a mock user for testing
-
+    
     Returns a standard user with DEVELOPER role
     """
     return User(
         id="test_user_123",
-        email="test@example.com",
+        email="test@omnipath.ai",
         username="testuser",
         tenant_id="test_tenant",
         role=UserRole.DEVELOPER,
-        is_active=True,
+        is_active=True
     )
 
 
@@ -102,11 +84,11 @@ def mock_admin_user() -> User:
     """Create a mock admin user for testing"""
     return User(
         id="admin_user_123",
-        email="admin@example.com",
+        email="admin@omnipath.ai",
         username="adminuser",
         tenant_id="test_tenant",
         role=UserRole.ADMIN,
-        is_active=True,
+        is_active=True
     )
 
 
@@ -115,11 +97,11 @@ def mock_viewer_user() -> User:
     """Create a mock viewer user for testing"""
     return User(
         id="viewer_user_123",
-        email="viewer@example.com",
+        email="viewer@omnipath.ai",
         username="vieweruser",
         tenant_id="test_tenant",
         role=UserRole.VIEWER,
-        is_active=True,
+        is_active=True
     )
 
 
@@ -127,7 +109,7 @@ def mock_viewer_user() -> User:
 def auth_token(mock_user: User) -> str:
     """
     Create a valid JWT token for testing authenticated endpoints
-
+    
     Usage:
         def test_protected_endpoint(client, auth_token):
             response = client.get(
@@ -140,7 +122,7 @@ def auth_token(mock_user: User) -> str:
         "user_id": mock_user.id,
         "email": mock_user.email,
         "tenant_id": mock_user.tenant_id,
-        "role": mock_user.role.value,
+        "role": mock_user.role.value
     }
     return create_access_token(token_data)
 
@@ -152,7 +134,7 @@ def admin_auth_token(mock_admin_user: User) -> str:
         "user_id": mock_admin_user.id,
         "email": mock_admin_user.email,
         "tenant_id": mock_admin_user.tenant_id,
-        "role": mock_admin_user.role.value,
+        "role": mock_admin_user.role.value
     }
     return create_access_token(token_data)
 
@@ -161,7 +143,7 @@ def admin_auth_token(mock_admin_user: User) -> str:
 def auth_headers(auth_token: str) -> dict:
     """
     Create authorization headers for authenticated requests
-
+    
     Usage:
         def test_endpoint(client, auth_headers):
             response = client.get("/api/v1/economy/balance", headers=auth_headers)
@@ -179,56 +161,44 @@ def admin_auth_headers(admin_auth_token: str) -> dict:
 # Economy System Fixtures
 # ============================================================================
 
-
 @pytest.fixture
-async def marketplace() -> ResourceMarketplace:
+def marketplace() -> ResourceMarketplace:
     """
     Create a fresh ResourceMarketplace instance for testing
-
-    Each test gets its own isolated marketplace with clean state
+    
+    Each test gets its own isolated marketplace
     """
-    mp = ResourceMarketplace()
-    # Explicitly clear any shared state to ensure isolation
-    mp._balances.clear()
-    mp._transactions.clear()
-    return mp
+    return ResourceMarketplace()
 
 
 @pytest.fixture
-async def marketplace_with_data(
-    marketplace: ResourceMarketplace, mock_user: User
-) -> ResourceMarketplace:
+async def marketplace_with_data(marketplace: ResourceMarketplace, mock_user: User) -> ResourceMarketplace:
     """
     Create a marketplace with pre-populated test data
-
+    
     Includes:
     - 3 agents with different balances
     - Multiple transactions
     - Various resource types
     """
     tenant_id = mock_user.tenant_id
-
+    
     # Create agents with different balances
     await marketplace.charge(tenant_id, "agent_commander", 50.0, "llm_call", agent_type="commander")
-    await marketplace.reward(
-        tenant_id, "agent_commander", 100.0, "mission_success", agent_type="commander"
-    )
-
+    await marketplace.reward(tenant_id, "agent_commander", 100.0, "mission_success", agent_type="commander")
+    
     await marketplace.charge(tenant_id, "agent_guardian", 10.0, "llm_call", agent_type="guardian")
     await marketplace.charge(tenant_id, "agent_guardian", 5.0, "compute", agent_type="guardian")
-
+    
     await marketplace.charge(tenant_id, "agent_archivist", 200.0, "storage", agent_type="archivist")
-    await marketplace.reward(
-        tenant_id, "agent_archivist", 50.0, "quality_bonus", agent_type="archivist"
-    )
-
+    await marketplace.reward(tenant_id, "agent_archivist", 50.0, "quality_bonus", agent_type="archivist")
+    
     return marketplace
 
 
 # ============================================================================
 # Test Data Fixtures
 # ============================================================================
-
 
 @pytest.fixture
 def sample_mission_data() -> dict:
@@ -239,7 +209,7 @@ def sample_mission_data() -> dict:
         "description": "A test mission for integration testing",
         "priority": "high",
         "assigned_agents": ["agent_commander", "agent_guardian"],
-        "status": "pending",
+        "status": "pending"
     }
 
 
@@ -251,7 +221,7 @@ def sample_agent_data() -> dict:
         "agent_type": "commander",
         "name": "Test Commander",
         "capabilities": ["planning", "coordination"],
-        "status": "active",
+        "status": "active"
     }
 
 
@@ -259,12 +229,11 @@ def sample_agent_data() -> dict:
 # Cleanup Fixtures
 # ============================================================================
 
-
 @pytest.fixture(autouse=True)
 async def cleanup():
     """
     Automatic cleanup after each test
-
+    
     This runs after every test to ensure clean state
     """
     yield
