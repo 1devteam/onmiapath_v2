@@ -1,3 +1,10 @@
+## [7.3.1] — 2026-04-03
+
+### Bug Fixes & Improvements
+- fix: correct UserCreate import in auth route (`2690043b`)
+
+---
+
 ## [7.3.0] — 2026-04-03
 
 ### Features
