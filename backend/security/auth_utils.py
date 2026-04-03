@@ -4,7 +4,9 @@ import logging
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from fastapi import Query, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, EmailStr
 
 from backend.config.settings import Settings
 from backend.models.domain.user import User, UserInDB, UserRole
@@ -18,10 +20,19 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # In-memory store for users for personal build simplification
 # In a production system, this would be a database
 in_memory_users_db: Dict[str, Dict[str, Any]] = {}
+security = HTTPBearer(auto_error=False)
+
 ADMIN_BYPASS_USER_EMAIL = "admin@example.com"
 ADMIN_BYPASS_USER_USERNAME = "admin"
 ADMIN_BYPASS_TENANT_ID = "default-tenant"
 ADMIN_BYPASS_USER_ID = "admin-id"
+
+
+class UserCreate(BaseModel):
+    """Request model for user registration."""
+
+    email: EmailStr
+    password: str
 
 
 def get_password_hash(password: str) -> str:
@@ -108,11 +119,21 @@ def _build_admin_bypass_user() -> User:
     )
 
 
-async def get_current_user(token: str = Query(...)) -> User:
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> User:
     """
-    FastAPI dependency to get the current authenticated user from a query parameter.
-    Mainly used for simplified personal builds and testing.
+    FastAPI dependency to get the current authenticated user from an Authorization header.
     """
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = credentials.credentials
+
     # Bypass for local testing/personal build
     if token == "admin-token":
         return _build_admin_bypass_user()
