@@ -14,7 +14,9 @@ from backend.security.auth_utils import (
 )
 from datetime import timedelta
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+AUTH_ROUTER_PREFIX = "/api/v1/auth"
+
+router = APIRouter(prefix=AUTH_ROUTER_PREFIX, tags=["auth"])
 
 
 class LegacyLoginRequest(BaseModel):

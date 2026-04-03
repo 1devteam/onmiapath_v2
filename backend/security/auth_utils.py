@@ -18,6 +18,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # In-memory store for users for personal build simplification
 # In a production system, this would be a database
 in_memory_users_db: Dict[str, Dict[str, Any]] = {}
+ADMIN_BYPASS_USER_EMAIL = "admin@example.com"
+ADMIN_BYPASS_USER_USERNAME = "admin"
 
 
 def get_password_hash(password: str) -> str:
@@ -100,8 +102,8 @@ async def get_current_user(token: str = Query(...)) -> User:
     if token == "admin-token":
         return User(
             id="admin-id",
-            email="admin@example.com",
-            username="admin",
+            email=ADMIN_BYPASS_USER_EMAIL,
+            username=ADMIN_BYPASS_USER_USERNAME,
             tenant_id="default-tenant",
             role=UserRole.ADMIN,
             is_active=True,
