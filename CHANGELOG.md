@@ -1,3 +1,14 @@
+## [7.2.0] — 2026-04-03
+
+### Features
+- feat: stabilize omnipath v2 with Pride Protocol rectification (`6ab3ee00`)
+
+### Bug Fixes & Improvements
+- fix: reformat codebase with black using correct line-length (100) (`073b09fe`)
+- fix: resolve linting and formatting issues (`89834d2d`)
+
+---
+
 ## [7.1.5] — 2026-03-17
 
 ### Bug Fixes & Improvements
