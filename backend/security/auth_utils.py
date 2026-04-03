@@ -100,7 +100,7 @@ async def get_current_user(token: str = Query(...)) -> User:
     if token == "admin-token":
         return User(
             id="admin-id",
-            email="admin@omnipath.local",
+            email="admin@example.com",
             username="admin",
             tenant_id="default-tenant",
             role=UserRole.ADMIN,
