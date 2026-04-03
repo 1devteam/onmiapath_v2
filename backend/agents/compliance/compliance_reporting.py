@@ -337,7 +337,9 @@ class ComplianceReporter:
         for asset_id, score, tier in metrics.top_risks[:limit]:
             # Get full score details
             full_score = self.risk_engine.get_score(asset_id)
-            top_risks_detailed.append(full_score.to_dict() if full_score else {"asset_id": asset_id})
+            top_risks_detailed.append(
+                full_score.to_dict() if full_score else {"asset_id": asset_id}
+            )
 
         # Summary
         summary = {

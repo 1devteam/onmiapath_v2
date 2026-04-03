@@ -179,8 +179,7 @@ class TwitterTool(BaseTool):
                 "success": False,
                 "action": "post_tweet",
                 "error": (
-                    f"Tweet exceeds 280 chars ({len(text)} chars). "
-                    "Truncate or use post_thread."
+                    f"Tweet exceeds 280 chars ({len(text)} chars). " "Truncate or use post_thread."
                 ),
             }
 

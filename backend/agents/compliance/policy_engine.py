@@ -359,8 +359,12 @@ class PolicyTemplateLibrary:
                 )
             ],
             actions=[
-                PolicyAction(action_type=ActionType.DENY, parameters={"reason": "PHI access denied"}),
-                PolicyAction(action_type=ActionType.SEND_ALERT, parameters={"severity": "critical"}),
+                PolicyAction(
+                    action_type=ActionType.DENY, parameters={"reason": "PHI access denied"}
+                ),
+                PolicyAction(
+                    action_type=ActionType.SEND_ALERT, parameters={"severity": "critical"}
+                ),
             ],
             created_at=datetime.utcnow(),
             created_by="system",
@@ -415,7 +419,8 @@ class PolicyTemplateLibrary:
             ],
             actions=[
                 PolicyAction(
-                    action_type=ActionType.REQUIRE_APPROVAL, parameters={"role": "compliance_officer"}
+                    action_type=ActionType.REQUIRE_APPROVAL,
+                    parameters={"role": "compliance_officer"},
                 )
             ],
             created_at=datetime.utcnow(),
