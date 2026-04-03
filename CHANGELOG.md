@@ -1,3 +1,10 @@
+## [7.3.3] — 2026-04-03
+
+### Bug Fixes & Improvements
+- fix: align production config and dependencies for Hetzner (`e91cbbb0`)
+
+---
+
 ## [7.3.2] — 2026-04-03
 
 ### Bug Fixes & Improvements
