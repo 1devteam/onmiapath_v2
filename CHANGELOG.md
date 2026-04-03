@@ -1,3 +1,10 @@
+## [7.3.0] — 2026-04-03
+
+### Features
+- feat: address Codex review suggestions and PR feedback (`de59dfa2`)
+
+---
+
 ## [7.2.0] — 2026-04-03
 
 ### Features
