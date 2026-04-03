@@ -17,6 +17,35 @@ router = APIRouter(prefix="/api/v1/economy", tags=["economy"])
 marketplace = ResourceMarketplace()
 
 
+def _normalize_balance_payload(agent_id: str, raw_balance) -> dict:
+    """
+    Normalize marketplace balance payloads.
+
+    Supports both structured dict payloads and legacy float balances.
+    """
+    if isinstance(raw_balance, dict):
+        return {
+            "agent_id": raw_balance.get("agent_id", agent_id),
+            "type": raw_balance.get("type", raw_balance.get("agent_type", "unknown")),
+            "balance": raw_balance.get("balance", 0.0),
+            "total_earned": raw_balance.get("total_earned", 0.0),
+            "total_spent": raw_balance.get("total_spent", 0.0),
+            "last_updated": raw_balance.get("last_updated", datetime.utcnow()),
+        }
+
+    if isinstance(raw_balance, (int, float)):
+        return {
+            "agent_id": agent_id,
+            "type": "unknown",
+            "balance": float(raw_balance),
+            "total_earned": 0.0,
+            "total_spent": 0.0,
+            "last_updated": datetime.utcnow(),
+        }
+
+    raise HTTPException(status_code=500, detail="Invalid marketplace balance payload")
+
+
 class AgentBalance(BaseModel):
     """Agent credit balance"""
 
@@ -64,14 +93,15 @@ async def get_agent_balances(current_user: User = Depends(get_current_user)):
 
     return [
         AgentBalance(
-            agent_id=agent_id,
-            agent_type=data["type"],
-            balance=data["balance"],
-            total_earned=data["total_earned"],
-            total_spent=data["total_spent"],
-            last_updated=data["last_updated"],
+            agent_id=normalized["agent_id"],
+            agent_type=normalized["type"],
+            balance=normalized["balance"],
+            total_earned=normalized["total_earned"],
+            total_spent=normalized["total_spent"],
+            last_updated=normalized["last_updated"],
         )
         for agent_id, data in balances.items()
+        for normalized in [_normalize_balance_payload(agent_id, data)]
     ]
 
 
@@ -83,13 +113,14 @@ async def get_agent_balance(agent_id: str, current_user: User = Depends(get_curr
     if balance is None:
         raise HTTPException(status_code=404, detail="Agent not found")
 
+    normalized = _normalize_balance_payload(agent_id, balance)
     return AgentBalance(
-        agent_id=agent_id,
-        agent_type=balance["type"],
-        balance=balance["balance"],
-        total_earned=balance["total_earned"],
-        total_spent=balance["total_spent"],
-        last_updated=balance["last_updated"],
+        agent_id=normalized["agent_id"],
+        agent_type=normalized["type"],
+        balance=normalized["balance"],
+        total_earned=normalized["total_earned"],
+        total_spent=normalized["total_spent"],
+        last_updated=normalized["last_updated"],
     )
 
 
