@@ -13,9 +13,9 @@ class Settings(BaseSettings):
 
     # Application
     APP_NAME: str = "Omnipath"
-    APP_VERSION: str = "3.0.0"
+    APP_VERSION: str = "7.3.2"
     DEBUG: bool = False
-    ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production)$")
+    ENVIRONMENT: str = Field(default="production", pattern="^(development|staging|production)$")
 
     # LLM Provider Configuration
     # API Keys
@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "json"
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "https://nested-ai.net"]
     CORS_ALLOW_CREDENTIALS: bool = True
 
     # Monitoring
