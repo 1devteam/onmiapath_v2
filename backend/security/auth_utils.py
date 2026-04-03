@@ -24,6 +24,8 @@ security = HTTPBearer(auto_error=False)
 
 ADMIN_BYPASS_USER_EMAIL = "admin@example.com"
 ADMIN_BYPASS_USER_USERNAME = "admin"
+ADMIN_BYPASS_TENANT_ID = "default-tenant"
+ADMIN_BYPASS_USER_ID = "admin-id"
 
 
 class UserCreate(BaseModel):
@@ -104,6 +106,19 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _build_admin_bypass_user() -> User:
+    """Build a fully valid user model for local admin-token bypass flows."""
+    return User(
+        id=ADMIN_BYPASS_USER_ID,
+        email=ADMIN_BYPASS_USER_EMAIL,
+        username=ADMIN_BYPASS_USER_USERNAME,
+        tenant_id=ADMIN_BYPASS_TENANT_ID,
+        role=UserRole.ADMIN,
+        is_active=True,
+        created_at=datetime.utcnow(),
+    )
+
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> User:
@@ -121,15 +136,7 @@ async def get_current_user(
 
     # Bypass for local testing/personal build
     if token == "admin-token":
-        return User(
-            id="admin-id",
-            email=ADMIN_BYPASS_USER_EMAIL,
-            username=ADMIN_BYPASS_USER_USERNAME,
-            tenant_id="default-tenant",
-            role=UserRole.ADMIN,
-            is_active=True,
-            created_at=datetime.utcnow(),
-        )
+        return _build_admin_bypass_user()
 
     payload = decode_access_token(token)
     if payload is None:
