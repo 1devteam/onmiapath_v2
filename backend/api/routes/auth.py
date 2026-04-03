@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, ValidationError
 from backend.security.auth_utils import (
     create_access_token,
     authenticate_user,
@@ -14,6 +17,12 @@ from datetime import timedelta
 AUTH_ROUTER_PREFIX = "/api/v1/auth"
 
 router = APIRouter(prefix=AUTH_ROUTER_PREFIX, tags=["auth"])
+
+
+class LegacyLoginRequest(BaseModel):
+    email: Optional[str] = None
+    username: Optional[str] = None
+    password: str
 
 
 @router.post("/register", response_model=User)
@@ -57,9 +66,35 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 
 @router.post("/login")
-async def login_compat(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_compat(request: Request):
     """Backward-compatible alias for clients that call /api/v1/auth/login."""
-    user = await authenticate_user(form_data.username, form_data.password)
+    content_type = request.headers.get("content-type", "").lower()
+
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+    if "application/json" in content_type:
+        try:
+            payload = LegacyLoginRequest.model_validate(await request.json())
+        except (ValueError, ValidationError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid login payload",
+            ) from exc
+        username = payload.username or payload.email
+        password = payload.password
+    else:
+        form_data = await request.form()
+        username = form_data.get("username") or form_data.get("email")
+        password = form_data.get("password")
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing login credentials",
+        )
+
+    user = await authenticate_user(username, password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
