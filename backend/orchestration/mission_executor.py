@@ -1,5 +1,4 @@
 import logging
-import uuid
 from datetime import datetime
 import json
 import redis.asyncio as redis

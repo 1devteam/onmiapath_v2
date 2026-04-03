@@ -387,8 +387,6 @@ class RiskMetricsAggregator:
             List of ``(bucket_timestamp, average_score, asset_count)`` tuples
             ordered from oldest to newest.
         """
-        from collections import defaultdict
-
         # Validate granularity
         valid_granularities = {"daily", "weekly", "monthly"}
         if granularity not in valid_granularities:

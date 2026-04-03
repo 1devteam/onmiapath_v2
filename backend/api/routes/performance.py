@@ -4,8 +4,8 @@ Monitor agent learning and optimization
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
+from typing import List, Optional, Dict
 from datetime import datetime
 
 from backend.middleware.auth.auth_middleware import get_current_user

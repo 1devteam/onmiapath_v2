@@ -8,11 +8,11 @@ Date: 2026-02-26
 Built with Pride for Obex Blackvault
 """
 
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Any
 from enum import Enum
-import uuid
 
 from ..registry.asset_registry import get_registry, AssetStatus
 from ..registry.lineage_tracker import get_tracker
@@ -295,10 +295,12 @@ class ComplianceReporter:
         recommendations = []
         if deprecated_active:
             recommendations.append(
-                "Archive or remove deprecated assets to maintain clean inventory"
+                f"Decommission {len(deprecated_active)} deprecated assets to reduce risk surface"
             )
         if untagged:
-            recommendations.append("Apply contextual tags to all assets for better governance")
+            recommendations.append(
+                f"Apply contextual tags to {len(untagged)} assets for better policy enforcement"
+            )
 
         return ComplianceReport(
             report_id=str(uuid.uuid4()),
@@ -309,162 +311,20 @@ class ComplianceReporter:
             summary=summary,
             findings=findings,
             recommendations=recommendations,
-            data={
-                "assets": asset_details,
-            },
+            data={"assets": asset_details},
         )
 
-    def generate_regulatory_compliance_report(
-        self, regulation: str, generated_by: str = "system"
+    def generate_risk_assessment(
+        self, generated_by: str = "system", limit: int = 100
     ) -> ComplianceReport:
-        """
-        Generate regulatory compliance report.
-
-        Compliance status for specific regulation (EU AI Act, GDPR, HIPAA, SOX).
-
-        Args:
-            regulation: Regulation name ("eu_ai_act", "gdpr", "hipaa", "sox")
-            generated_by: User ID generating the report
-
-        Returns:
-            ComplianceReport with regulatory compliance information
-        """
-        assets = self.registry.list_all()
-
-        # Filter assets by regulation
-        if regulation == "eu_ai_act":
-            relevant_assets = assets  # All assets subject to EU AI Act
-            tag_filter = ["eu-ai-act"]
-        elif regulation == "gdpr":
-            tag_filter = ["pii", "gdpr"]
-            relevant_assets = [a for a in assets if any(t in a.tags for t in tag_filter)]
-        elif regulation == "hipaa":
-            tag_filter = ["phi", "hipaa", "healthcare"]
-            relevant_assets = [a for a in assets if any(t in a.tags for t in tag_filter)]
-        elif regulation == "sox":
-            tag_filter = ["financial", "sox"]
-            relevant_assets = [a for a in assets if any(t in a.tags for t in tag_filter)]
-        else:
-            raise ValueError(f"Unknown regulation: {regulation}")
-
-        # Analyze compliance
-        compliant = 0
-        non_compliant = 0
-        partial_compliant = 0
-
-        compliance_details = []
-        for asset in relevant_assets:
-            risk_score = self.risk_engine.get_score(asset.asset_id)
-
-            # Check compliance criteria
-            has_risk_assessment = risk_score is not None
-            has_tags = bool(asset.tags)
-            has_documentation = bool(asset.description)
-
-            if has_risk_assessment and has_tags and has_documentation:
-                status = "compliant"
-                compliant += 1
-            elif has_risk_assessment or has_tags:
-                status = "partial"
-                partial_compliant += 1
-            else:
-                status = "non_compliant"
-                non_compliant += 1
-
-            compliance_details.append(
-                {
-                    "asset_id": asset.asset_id,
-                    "name": asset.name,
-                    "status": status,
-                    "has_risk_assessment": has_risk_assessment,
-                    "has_tags": has_tags,
-                    "has_documentation": has_documentation,
-                    "risk_tier": risk_score.tier.value if risk_score else "unknown",
-                }
-            )
-
-        # Summary
-        total = len(relevant_assets)
-        compliance_rate = (compliant / total * 100) if total > 0 else 0.0
-
-        summary = {
-            "regulation": regulation,
-            "total_assets": total,
-            "compliant": compliant,
-            "partial_compliant": partial_compliant,
-            "non_compliant": non_compliant,
-            "compliance_rate": round(compliance_rate, 2),
-        }
-
-        # Findings
-        findings = []
-
-        if non_compliant > 0:
-            findings.append(
-                {
-                    "category": "Non-Compliance",
-                    "severity": "critical",
-                    "description": f"{non_compliant} assets do not meet {regulation.upper()} requirements",  # noqa: E501
-                    "details": {
-                        "assets": [
-                            a["asset_id"]
-                            for a in compliance_details
-                            if a["status"] == "non_compliant"
-                        ]
-                    },
-                }
-            )
-
-        if partial_compliant > 0:
-            findings.append(
-                {
-                    "category": "Partial Compliance",
-                    "severity": "warning",
-                    "description": f"{partial_compliant} assets partially comply with {regulation.upper()}",  # noqa: E501
-                    "details": {
-                        "assets": [
-                            a["asset_id"] for a in compliance_details if a["status"] == "partial"
-                        ]
-                    },
-                }
-            )
-
-        # Recommendations
-        recommendations = []
-        if non_compliant > 0:
-            recommendations.append(
-                f"Complete risk assessments and tagging for {non_compliant} non-compliant assets"
-            )
-        if partial_compliant > 0:
-            recommendations.append(
-                f"Address gaps in {partial_compliant} partially compliant assets"
-            )
-        if compliance_rate < 100:
-            recommendations.append(f"Target 100% compliance (currently {compliance_rate}%)")
-
-        return ComplianceReport(
-            report_id=str(uuid.uuid4()),
-            report_type=ReportType.REGULATORY,
-            generated_at=datetime.utcnow(),
-            generated_by=generated_by,
-            time_period=(datetime.utcnow() - timedelta(days=1), datetime.utcnow()),
-            summary=summary,
-            findings=findings,
-            recommendations=recommendations,
-            data={
-                "compliance_details": compliance_details,
-            },
-        )
-
-    def generate_risk_assessment_report(self, generated_by: str = "system") -> ComplianceReport:
         """
         Generate risk assessment report.
 
-        Portfolio risk analysis with factor breakdown, high-risk deep dive,
-        and mitigation recommendations.
+        Detailed analysis of risk factors, distribution, and critical threats.
 
         Args:
             generated_by: User ID generating the report
+            limit: Maximum number of high-risk assets to detail
 
         Returns:
             ComplianceReport with risk assessment information
@@ -472,28 +332,12 @@ class ComplianceReporter:
         metrics = self.metrics_aggregator.get_portfolio_metrics()
         heatmap = self.metrics_aggregator.get_risk_heatmap()
 
-        # Get top risks with detailed breakdown
+        # Detailed risk analysis for top assets
         top_risks_detailed = []
-        for asset_id, score, tier in metrics.top_risks[:10]:
-            asset = self.registry.get(asset_id)
-            breakdown = self.risk_engine.get_risk_breakdown(asset_id)
-
-            if asset and breakdown:
-                top_risks_detailed.append(
-                    {
-                        "asset_id": asset_id,
-                        "name": asset.name,
-                        "type": asset.asset_type.value,
-                        "score": round(score, 2),
-                        "tier": tier,
-                        "breakdown": {
-                            "inherent": round(breakdown.get("inherent", 0), 2),
-                            "data_sensitivity": round(breakdown.get("data_sensitivity", 0), 2),
-                            "operational": round(breakdown.get("operational_context", 0), 2),
-                            "historical": round(breakdown.get("historical", 0), 2),
-                        },
-                    }
-                )
+        for asset_id, score, tier in metrics.top_risks[:limit]:
+            # Get full score details
+            full_score = self.risk_engine.get_score(asset_id)
+            top_risks_detailed.append(full_score.to_dict() if full_score else {"asset_id": asset_id})
 
         # Summary
         summary = {

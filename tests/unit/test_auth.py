@@ -5,13 +5,13 @@ Tests JWT tokens, user authentication, and role-based access control
 
 import pytest
 from datetime import timedelta
-from jose import jwt, JWTError
+from jose import jwt
 
 from backend.middleware.auth.auth_middleware import (
     create_access_token,
     decode_access_token,
 )
-from backend.models.domain.user import User, UserRole, TokenData
+from backend.models.domain.user import User, UserRole
 from backend.config.settings import Settings
 
 

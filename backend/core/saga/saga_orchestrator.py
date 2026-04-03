@@ -955,7 +955,6 @@ class SocialMediaPostingSaga:
         self, context: Dict[str, Any], result: Optional[Dict[str, Any]]
     ) -> None:
         """No-op — drafts are ephemeral."""
-        pass
 
     # ------------------------------------------------------------------
     # Step: validate_content

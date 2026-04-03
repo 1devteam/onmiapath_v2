@@ -9,11 +9,11 @@ Date: 2026-02-27
 Built with Pride for Obex Blackvault
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from enum import Enum
-import uuid
 
 from backend.agents.registry.asset_registry import get_registry, AssetStatus
 from backend.agents.compliance.policy_engine import get_policy_manager, PolicyStatus
@@ -298,46 +298,25 @@ class ComplianceChecker:
         required_templates = ["gdpr-pii-protection", "high-risk-approval"]
         active_policies = [p for p in policies if p.status == PolicyStatus.ACTIVE]
 
-        for template_id in required_templates:
-            has_template = any(
-                p.metadata.get("template_id") == template_id for p in active_policies
-            )
-            if not has_template:
+        for template in required_templates:
+            if not any(p.template_id == template for p in active_policies):
                 findings.append(
                     ComplianceFinding(
                         finding_id=f"finding-{uuid.uuid4()}",
-                        description=f"Required policy template '{template_id}' not active",
+                        description=f"Required policy {template} is not active",
                         affected_assets=[],
-                        regulation=(
-                            Regulation.EU_AI_ACT if "high-risk" in template_id else Regulation.GDPR
-                        ),
-                        article=("Article 14" if "high-risk" in template_id else "Article 5"),
+                        regulation=Regulation.EU_AI_ACT,
+                        article="Article 9 (Risk management)",
                         severity=Severity.HIGH,
-                        remediation=f"Activate policy from template '{template_id}'",
+                        remediation=f"Activate policy {template}",
                     )
                 )
-                recommendations.append(f"Activate required policy: {template_id}")
-
-        # Check for policies without conditions
-        no_conditions = [p for p in active_policies if not p.conditions]
-        if no_conditions:
-            findings.append(
-                ComplianceFinding(
-                    finding_id=f"finding-{uuid.uuid4()}",
-                    description=f"{len(no_conditions)} active policies without conditions",
-                    affected_assets=[],
-                    regulation=Regulation.EU_AI_ACT,
-                    article="Article 17 (Quality management)",
-                    severity=Severity.MEDIUM,
-                    remediation="Add conditions to all policies or deactivate",
-                )
-            )
-            recommendations.append("Review and fix policies without conditions")
+                recommendations.append(f"Activate required policy: {template}")
 
         # Calculate score
-        score = max(0, 100 - (len(findings) * 10))
+        score = max(0, 100 - (len(findings) * 20))
 
-        status = CheckStatus.PASS if not findings else CheckStatus.WARNING
+        status = CheckStatus.PASS if not findings else CheckStatus.FAIL
 
         return ComplianceCheck(
             check_id=check_id,
@@ -354,99 +333,41 @@ class ComplianceChecker:
         )
 
     def _check_approval_compliance(self, check_id: str) -> ComplianceCheck:
-        """
-        Check if high-risk operations are properly approved.
-
-        Queries the :class:`ApprovalWorkflow` singleton for pending requests
-        that have exceeded their SLA and for executed operations that were
-        performed without a corresponding approved request.
-        """
-        from backend.agents.compliance.approval_workflows import (
-            get_approval_workflow,
-            ApprovalState,
+        """Check if high-risk operations are properly approved."""
+        from backend.database.repositories.approval_repository import (
+            get_approval_repository,
         )
 
-        workflow = get_approval_workflow()
-        findings: List[ComplianceFinding] = []
-        recommendations: List[str] = []
+        repo = get_approval_repository()
+        requests = repo.list_all()
 
-        # ----------------------------------------------------------------
-        # 1. Pending requests that have expired without resolution
-        # ----------------------------------------------------------------
-        expired = workflow.process_expired_requests()
-        if expired:
+        findings = []
+        recommendations = []
+
+        # Check for high-risk requests without approvals
+        # In a real system, we'd check if any high-risk operations were executed
+        # without a corresponding approved request. For now, we check the requests themselves.
+        pending_high_risk = [r for r in requests if r.priority == "high" and r.status == "pending"]
+
+        if pending_high_risk:
+            # This is more of a warning than a violation unless executed
             findings.append(
                 ComplianceFinding(
                     finding_id=f"finding-{uuid.uuid4()}",
-                    description=(
-                        f"{len(expired)} high-risk approval request(s) expired "
-                        "without being approved or rejected"
-                    ),
-                    affected_assets=[r.asset_id for r in expired],
-                    regulation=Regulation.EU_AI_ACT,
-                    article="Article 14 (Human oversight)",
-                    severity=Severity.HIGH,
-                    remediation=(
-                        "Review and resolve expired approval requests; "
-                        "ensure approvers are notified promptly"
-                    ),
-                    metadata={"expired_request_ids": [r.request_id for r in expired]},
-                )
-            )
-            recommendations.append(
-                "Configure shorter SLA windows or add escalation rules for approval requests"
-            )
-
-        # ----------------------------------------------------------------
-        # 2. Pending requests that have been waiting > 24 hours (SLA breach)
-        # ----------------------------------------------------------------
-        sla_threshold = datetime.utcnow() - timedelta(hours=24)
-        overdue = [r for r in workflow.get_pending_requests() if r.created_at < sla_threshold]
-        if overdue:
-            findings.append(
-                ComplianceFinding(
-                    finding_id=f"finding-{uuid.uuid4()}",
-                    description=(
-                        f"{len(overdue)} approval request(s) pending for more than 24 hours"
-                    ),
-                    affected_assets=[r.asset_id for r in overdue],
+                    description=f"{len(pending_high_risk)} high-priority approval requests are pending",  # noqa: E501
+                    affected_assets=[],
                     regulation=Regulation.EU_AI_ACT,
                     article="Article 14 (Human oversight)",
                     severity=Severity.MEDIUM,
-                    remediation="Escalate overdue approval requests to senior approvers",
-                    metadata={"overdue_request_ids": [r.request_id for r in overdue]},
+                    remediation="Review and process pending high-priority approvals",
                 )
             )
-            recommendations.append(
-                "Implement automated escalation for approval requests pending > 24 hours"
-            )
+            recommendations.append("Process high-priority approval requests promptly")
 
-        # ----------------------------------------------------------------
-        # 3. Score calculation
-        # ----------------------------------------------------------------
-        total_requests = len(workflow._requests)
-        resolved = sum(
-            1
-            for r in workflow._requests.values()
-            if r.state
-            in (
-                ApprovalState.APPROVED,
-                ApprovalState.REJECTED,
-                ApprovalState.EXECUTED,
-            )
-        )
-        resolution_rate = (resolved / total_requests) if total_requests > 0 else 1.0
-        score = max(0.0, min(100.0, resolution_rate * 100 - len(findings) * 10))
+        # Calculate score
+        score = max(0, 100 - (len(pending_high_risk) * 5))
 
-        status = (
-            CheckStatus.PASS
-            if not findings
-            else (
-                CheckStatus.FAIL
-                if any(f.severity == Severity.HIGH for f in findings)
-                else CheckStatus.WARNING
-            )
-        )
+        status = CheckStatus.PASS if score > 90 else CheckStatus.WARNING
 
         return ComplianceCheck(
             check_id=check_id,
@@ -455,35 +376,31 @@ class ComplianceChecker:
             timestamp=datetime.utcnow(),
             findings=findings,
             recommendations=recommendations,
-            score=round(score, 2),
+            score=score,
             metadata={
-                "total_requests": total_requests,
-                "resolved_requests": resolved,
-                "pending_requests": len(workflow.get_pending_requests()),
-                "expired_requests": len(expired),
-                "overdue_requests": len(overdue),
+                "total_requests": len(requests),
+                "pending_high_priority": len(pending_high_risk),
             },
         )
 
     def _check_data_compliance(self, check_id: str) -> ComplianceCheck:
-        """Check if sensitive data is properly protected."""
+        """Check if sensitive data is protected."""
         registry = get_registry()
         assets = registry.list_all()
+
+        sensitive_assets = [a for a in assets if "pii" in a.tags or "phi" in a.tags]
 
         findings = []
         recommendations = []
 
-        # Check for assets with PII/PHI tags but no protection policies
-        sensitive_tags = ["pii", "phi", "financial", "biometric"]
-        sensitive_assets = [a for a in assets if any(tag in a.tags for tag in sensitive_tags)]
-
         if sensitive_assets:
-            # Check if protection policies exist
             policy_manager = get_policy_manager()
-            policies = policy_manager.list_policies(status=PolicyStatus.ACTIVE)
+            active_policies = [
+                p for p in policy_manager.list_policies() if p.status == PolicyStatus.ACTIVE
+            ]
 
-            has_gdpr_policy = any("gdpr" in p.name.lower() for p in policies)
-            has_hipaa_policy = any("hipaa" in p.name.lower() for p in policies)
+            has_gdpr_policy = any(p.template_id == "gdpr-pii-protection" for p in active_policies)
+            has_hipaa_policy = any(p.template_id == "hipaa-phi-protection" for p in active_policies)
 
             if not has_gdpr_policy:
                 pii_assets = [a for a in sensitive_assets if "pii" in a.tags]
@@ -494,7 +411,7 @@ class ComplianceChecker:
                             description=f"{len(pii_assets)} assets with PII but no GDPR policy",
                             affected_assets=[a.asset_id for a in pii_assets],
                             regulation=Regulation.GDPR,
-                            article="Article 32 (Security)",
+                            article="Article 32 (Security of processing)",
                             severity=Severity.CRITICAL,
                             remediation="Activate GDPR PII protection policy",
                         )
@@ -554,9 +471,7 @@ class ComplianceChecker:
         findings: List[ComplianceFinding] = []
         recommendations: List[str] = []
 
-        # ----------------------------------------------------------------
         # 1. Assets with no audit trail
-        # ----------------------------------------------------------------
         no_trail = [a for a in assets if not monitor.get_audit_trail(a.asset_id)]
         if no_trail:
             findings.append(
@@ -574,9 +489,7 @@ class ComplianceChecker:
             )
             recommendations.append("Instrument all asset operations with audit events")
 
-        # ----------------------------------------------------------------
         # 2. Active anomalies detected in the last 24 hours
-        # ----------------------------------------------------------------
         anomalies = monitor.detect_anomalies()
         recent_anomalies = [
             a for a in anomalies if a.detected_at >= datetime.utcnow() - timedelta(hours=24)
@@ -602,9 +515,7 @@ class ComplianceChecker:
                 "Review anomaly alerts and update detection thresholds if needed"
             )
 
-        # ----------------------------------------------------------------
         # 3. Score calculation
-        # ----------------------------------------------------------------
         stats = monitor.get_statistics()
         total_events = stats.get("total_events", 0)
         denied_events = stats.get("denied_events", 0)
@@ -657,8 +568,8 @@ class ComplianceChecker:
         stale_threshold = datetime.utcnow() - timedelta(days=30)
 
         for asset in assets:
-            score = scorer.get_risk_score(asset.asset_id)
-            if score and score.risk_tier in [RiskTier.HIGH, RiskTier.CRITICAL]:
+            score = scorer.get_score(asset.asset_id)
+            if score and score.tier in [RiskTier.HIGH, RiskTier.CRITICAL]:
                 if score.calculated_at < stale_threshold:
                     findings.append(
                         ComplianceFinding(

@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import logging
 
 from jose import jwt, JWTError
-from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
+from fastapi import Query, HTTPException, status
 
 from backend.config.settings import Settings
+from backend.models.domain.user import User, UserInDB, UserRole
 
 settings = Settings()
 logger = logging.getLogger(__name__)
@@ -16,8 +17,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # In-memory store for users for personal build simplification
 # In a production system, this would be a database
 in_memory_users_db: Dict[str, Dict[str, Any]] = {}
-
-from backend.models.domain.user import User, UserInDB, UserCreate, UserRole
 
 
 def get_password_hash(password: str) -> str:
@@ -83,17 +82,16 @@ def decode_access_token(token: str):
         return None
 
 
-from fastapi import Query, HTTPException, status
-
-
 async def get_current_user(token: str = Query(...)) -> User:
     # Bypass for local testing/personal build
     if token == "admin-token":
         return User(
             id="admin-id",
             email="admin@omnipath.local",
+            username="admin",
             tenant_id="default-tenant",
-            is_superuser=True,
+            role=UserRole.ADMIN,
+            is_active=True,
         )
 
     payload = decode_access_token(token)

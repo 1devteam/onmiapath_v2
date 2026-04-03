@@ -2,6 +2,7 @@
 Commander Agent v3 - Enhanced with Multi-Model Support
 """
 
+import re
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -137,8 +138,6 @@ Analyze what happened and extract lessons learned."""
     def _extract_risk_score(self, content: str) -> float:
         """Extract risk score from LLM response"""
         # Simple extraction - in production, use structured output
-        import re
-
         match = re.search(r"risk.*?(\d+\.?\d*)", content.lower())
         if match:
             score = float(match.group(1))

@@ -9,11 +9,11 @@ Date: 2026-02-27
 Built with Pride for Obex Blackvault
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from enum import Enum
-import uuid
 
 
 # ============================================================================
@@ -309,9 +309,12 @@ class AuditMonitor:
             limit: Maximum number of events
 
         Returns:
-            List of events by this actor
+            List of events
         """
-        return self.get_events(actor=actor, limit=limit)
+        event_ids = self._event_index["by_actor"].get(actor, [])
+        events = [self._events[eid] for eid in event_ids if eid in self._events]
+        events.sort(key=lambda e: e.timestamp, reverse=True)
+        return events[:limit]
 
     def detect_anomalies(self) -> List[Anomaly]:
         """

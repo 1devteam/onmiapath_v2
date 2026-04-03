@@ -284,8 +284,6 @@ class RegulatoryMappingRule:
         asset = registry.get(asset_id)
 
         if asset:
-            if not hasattr(asset, "risk_assessment"):
-                asset.risk_assessment = None
             asset.risk_assessment = assessment
 
         # Check if action is block
@@ -320,7 +318,7 @@ class RegulatoryMappingRule:
 
     def get_risk_level(self, tags: List[str]) -> RiskLevel:
         """
-        Get risk level for given tags.
+        Get risk level for tags.
 
         Args:
             tags: List of tags

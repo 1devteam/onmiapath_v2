@@ -295,8 +295,8 @@ class ImpactAssessor:
             },
             {
                 "strategy_id": "min-02",
-                "name": "Annual Review",
-                "description": "Annual compliance review",
+                "name": "Annual Reviews",
+                "description": "Annual operational reviews",
                 "required": False,
                 "implementation_effort": "Low",
                 "effectiveness": 0.35,
@@ -304,198 +304,121 @@ class ImpactAssessor:
         ],
     }
 
-    def __new__(cls):
-        """Ensure singleton instance."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
     def __init__(self):
-        """Initialize impact assessor."""
+        """Initialize the assessor."""
         self.registry = get_registry()
 
-    def assess_impact(self, asset_id: str) -> ImpactScore:
+    def assess_impact(self, asset_id: str) -> Optional[ImpactScore]:
         """
-        Assess comprehensive impact for an asset.
+        Assess impact for an asset.
 
         Args:
             asset_id: AIAsset identifier
 
         Returns:
-            ImpactScore with assessment
-
-        Raises:
-            ValueError: If asset not found
+            ImpactScore if asset exists, else None
         """
-        # Get asset
         asset = self.registry.get(asset_id)
         if not asset:
-            raise ValueError(f"Asset {asset_id} not found")
+            return None
 
-        # Calculate each dimension
-        business = self._assess_business_impact(asset)
-        technical = self._assess_technical_impact(asset)
-        compliance = self._assess_compliance_impact(asset)
+        # Calculate scores for each dimension
+        business = self._calculate_business_impact(asset)
+        technical = self._calculate_technical_impact(asset)
+        compliance = self._calculate_compliance_impact(asset)
 
-        # Calculate overall impact
+        # Weighted overall impact
         overall = (
-            business * self.BUSINESS_WEIGHT
-            + technical * self.TECHNICAL_WEIGHT
-            + compliance * self.COMPLIANCE_WEIGHT
+            (business * self.BUSINESS_WEIGHT)
+            + (technical * self.TECHNICAL_WEIGHT)
+            + (compliance * self.COMPLIANCE_WEIGHT)
         )
 
-        # Calculate blast radius
-        blast_radius = self.calculate_blast_radius(asset_id)
+        # Blast radius
+        blast_radius = self._calculate_blast_radius(asset_id)
 
-        # Get affected systems
+        # Affected systems
         affected_systems = self._get_affected_systems(asset)
 
-        # Create impact score
-        impact_score = ImpactScore(
+        return ImpactScore(
             asset_id=asset_id,
-            business_impact=business,
-            technical_impact=technical,
-            compliance_impact=compliance,
-            overall_impact=overall,
+            business_impact=round(business, 2),
+            technical_impact=round(technical, 2),
+            compliance_impact=round(compliance, 2),
+            overall_impact=round(overall, 2),
             blast_radius=blast_radius,
             affected_systems=affected_systems,
             assessed_at=datetime.utcnow(),
         )
 
-        # Store in asset metadata
-        if not hasattr(asset, "impact_score"):
-            asset.impact_score = impact_score
-        else:
-            asset.impact_score = impact_score
-
-        return impact_score
-
-    def _assess_business_impact(self, asset) -> float:
-        """Assess business impact (0-100)."""
+    def _calculate_business_impact(self, asset) -> float:
+        """Calculate business impact score (0-100)."""
         score = 0.0
 
-        # Check metadata for business indicators
-        if hasattr(asset, "metadata") and asset.metadata:
-            # Revenue at risk
-            revenue_risk = asset.metadata.get("revenue_at_risk", 0)
-            if revenue_risk > 1000000:  # $1M+
-                score += 40
-            elif revenue_risk > 100000:  # $100K+
-                score += 25
-            elif revenue_risk > 10000:  # $10K+
-                score += 10
+        # Factor 1: Revenue dependence
+        if "revenue-critical" in asset.tags:
+            score += 40.0
+        elif "revenue-impacting" in asset.tags:
+            score += 20.0
 
-            # Customer impact
-            customers_affected = asset.metadata.get("customers_affected", 0)
-            if customers_affected > 10000:
-                score += 30
-            elif customers_affected > 1000:
-                score += 20
-            elif customers_affected > 100:
-                score += 10
+        # Factor 2: Customer impact
+        if "customer-facing" in asset.tags:
+            score += 30.0
+        elif "internal-only" in asset.tags:
+            score += 10.0
 
-            # Regulatory penalties
-            if asset.metadata.get("regulatory_penalties_risk"):
-                score += 20
-
-            # Reputational risk
-            if asset.metadata.get("reputational_risk"):
-                score += 10
-
-        # Check tags for business impact
-        if asset.tags:
-            if "user-facing" in asset.tags:
-                score += 15
-            if "revenue-generating" in asset.tags:
-                score += 15
+        # Factor 3: Regulatory penalties
+        if "high-regulatory-risk" in asset.tags:
+            score += 30.0
 
         return min(100.0, score)
 
-    def _assess_technical_impact(self, asset) -> float:
-        """Assess technical impact (0-100)."""
+    def _calculate_technical_impact(self, asset) -> float:
+        """Calculate technical impact score (0-100)."""
         score = 0.0
 
-        # Check dependencies (blast radius)
+        # Factor 1: Blast radius (direct dependents)
         dependents = self.registry.get_dependents(asset.asset_id)
-        if dependents:
-            if len(dependents) > 20:
-                score += 40
-            elif len(dependents) > 10:
-                score += 30
-            elif len(dependents) > 5:
-                score += 20
-            else:
-                score += 10
+        score += min(40.0, len(dependents) * 5.0)
 
-        # Check metadata for technical indicators
+        # Factor 2: Data volume/sensitivity
+        if "large-data-volume" in asset.tags:
+            score += 30.0
+
+        # Factor 3: Recovery time objective (RTO)
+        # Higher score for lower RTO (more critical)
         if hasattr(asset, "metadata") and asset.metadata:
-            # Data volume
-            data_volume = asset.metadata.get("data_volume_gb", 0)
-            if data_volume > 1000:  # 1TB+
-                score += 25
-            elif data_volume > 100:  # 100GB+
-                score += 15
-            elif data_volume > 10:  # 10GB+
-                score += 5
-
-            # RTO (Recovery Time Objective)
-            rto_hours = asset.metadata.get("rto_hours", 24)
-            if rto_hours < 1:  # < 1 hour
-                score += 25
-            elif rto_hours < 4:  # < 4 hours
-                score += 15
-            elif rto_hours < 24:  # < 1 day
-                score += 10
-
-        # Check tags
-        if asset.tags:
-            if "high-volume" in asset.tags:
-                score += 10
+            rto = asset.metadata.get("rto_hours", 24)
+            if rto <= 1:
+                score += 30.0
+            elif rto <= 4:
+                score += 20.0
+            elif rto <= 12:
+                score += 10.0
 
         return min(100.0, score)
 
-    def _assess_compliance_impact(self, asset) -> float:
-        """Assess compliance impact (0-100)."""
+    def _calculate_compliance_impact(self, asset) -> float:
+        """Calculate compliance impact score (0-100)."""
         score = 0.0
 
-        # Check risk assessment
-        if hasattr(asset, "risk_assessment") and asset.risk_assessment:
-            requirements = asset.risk_assessment.requirements
-            if len(requirements) > 5:
-                score += 40
-            elif len(requirements) > 3:
-                score += 25
-            elif len(requirements) > 0:
-                score += 15
+        # Factor 1: PII/Sensitive data
+        if "pii" in asset.tags or "phi" in asset.tags:
+            score += 50.0
 
-        # Check tags for compliance indicators
-        if asset.tags:
-            compliance_tags = ["gdpr", "hipaa", "sox", "eu-ai-act"]
-            matching = [tag for tag in asset.tags if tag in compliance_tags]
-            score += len(matching) * 15
+        # Factor 2: Regulatory framework
+        if "gdpr" in asset.tags or "hipaa" in asset.tags:
+            score += 30.0
 
-        # Check metadata
-        if hasattr(asset, "metadata") and asset.metadata:
-            if asset.metadata.get("audit_required"):
-                score += 20
-            if asset.metadata.get("documentation_required"):
-                score += 10
+        # Factor 3: Audit requirements
+        if "audit-critical" in asset.tags:
+            score += 20.0
 
         return min(100.0, score)
 
-    def calculate_blast_radius(self, asset_id: str) -> int:
-        """
-        Calculate blast radius (number of affected assets).
-
-        Args:
-            asset_id: AIAsset identifier
-
-        Returns:
-            Number of assets that depend on this asset
-        """
-        # Get direct dependents
+    def _calculate_blast_radius(self, asset_id: str) -> int:
+        """Calculate total blast radius (direct + indirect dependents)."""
         dependents = self.registry.get_dependents(asset_id)
-
         if not dependents:
             return 0
 

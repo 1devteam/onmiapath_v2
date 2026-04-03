@@ -130,7 +130,10 @@ class PlaywrightBrowserTool(BaseTool):
         if not _check_playwright():
             return {
                 "success": False,
-                "error": "Playwright is not installed. Run: pip install playwright && playwright install chromium",
+                "error": (
+                    "Playwright is not installed. "
+                    "Run: pip install playwright && playwright install chromium"
+                ),
             }
 
         try:

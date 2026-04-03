@@ -133,8 +133,8 @@ async def startup_message():
     """Log startup completion"""
     logger.info("=" * 60)
     logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} is ready!")
-    logger.info(f"API Documentation: http://localhost:8000/docs")
-    logger.info(f"Health Check: http://localhost:8000/health")
+    logger.info("API Documentation: http://localhost:8000/docs")
+    logger.info("Health Check: http://localhost:8000/health")
 
     logger.info("=" * 60)
 

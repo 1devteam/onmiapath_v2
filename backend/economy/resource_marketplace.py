@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, List
+from typing import Dict, List
+from datetime import datetime
 import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,8 @@ class ResourceMarketplace:
     ) -> Dict:
         """Always approves charges for personal use."""
         logger.info(
-            f"Charge of {amount} for agent {agent_id} (tenant {tenant_id}) approved (personal build)."
+            f"Charge of {amount} for agent {agent_id} (tenant {tenant_id}) "
+            "approved (personal build)."
         )
         return {
             "id": "dummy_charge_id",
@@ -61,7 +63,8 @@ class ResourceMarketplace:
     ) -> Dict:
         """Always approves rewards for personal use."""
         logger.info(
-            f"Reward of {amount} for agent {agent_id} (tenant {tenant_id}) approved (personal build)."
+            f"Reward of {amount} for agent {agent_id} (tenant {tenant_id}) "
+            "approved (personal build)."
         )
         return {
             "id": "dummy_reward_id",
@@ -78,7 +81,8 @@ class ResourceMarketplace:
     ) -> bool:
         """Always approves top-ups for personal use."""
         logger.info(
-            f"Top-up of {amount} for agent {agent_id} (tenant {tenant_id}) approved (personal build)."
+            f"Top-up of {amount} for agent {agent_id} (tenant {tenant_id}) "
+            "approved (personal build)."
         )
         return True
 
@@ -123,7 +127,3 @@ class ResourceMarketplace:
     async def get_tenant_total_balance(self, tenant_id: str) -> float:
         """Always returns a very large total balance."""
         return 1_000_000_000.0
-
-
-from datetime import datetime
-from typing import List

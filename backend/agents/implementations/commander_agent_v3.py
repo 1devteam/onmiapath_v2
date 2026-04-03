@@ -1,5 +1,4 @@
 from typing import Dict, Any
-import asyncio
 import logging
 
 from backend.agents.base.base_agent import BaseAgent
