@@ -1,3 +1,13 @@
+## [7.3.2] — 2026-04-03
+
+### Bug Fixes & Improvements
+- fix: ensure auth_utils.py has correct content (`30881cf4`)
+- fix: correct UserCreate import and update auth compatibility tests (`be489d4a`)
+- refactor(economy): enforce canonical agent ID and strict balance validation (`abb4bf58`)
+- fix(auth): preserve v1 auth prefix and harden admin bypass user (`36a6e5c3`)
+
+---
+
 ## [7.3.1] — 2026-04-03
 
 ### Bug Fixes & Improvements
