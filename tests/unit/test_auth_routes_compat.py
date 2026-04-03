@@ -5,6 +5,8 @@ from backend.security.auth_utils import (
     get_current_user,
     ADMIN_BYPASS_USER_EMAIL,
     ADMIN_BYPASS_USER_USERNAME,
+    ADMIN_BYPASS_TENANT_ID,
+    ADMIN_BYPASS_USER_ID,
 )
 from backend.models.domain.user import UserRole
 
@@ -20,6 +22,7 @@ def test_auth_router_uses_v1_auth_prefix():
 def test_auth_router_exposes_login_and_token_endpoints():
     route_paths = {route.path for route in router.routes}
 
+    assert f"{AUTH_ROUTER_PREFIX}/register" in route_paths
     assert f"{AUTH_ROUTER_PREFIX}/token" in route_paths
     assert f"{AUTH_ROUTER_PREFIX}/login" in route_paths
 
@@ -32,7 +35,7 @@ async def test_admin_token_bypass_returns_valid_user_model():
 
     assert user.email == ADMIN_BYPASS_USER_EMAIL
     assert user.username == ADMIN_BYPASS_USER_USERNAME
-    assert user.id == "admin-id"
-    assert user.tenant_id == "default-tenant"
+    assert user.id == ADMIN_BYPASS_USER_ID
+    assert user.tenant_id == ADMIN_BYPASS_TENANT_ID
     assert user.is_active is True
     assert user.role == UserRole.ADMIN
