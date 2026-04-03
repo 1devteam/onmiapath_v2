@@ -1,3 +1,10 @@
+## [7.4.0] — 2026-04-03
+
+### Features
+- feat: add OmniPath V2 Capabilities Whitepaper for marketing mission (`46cce079`)
+
+---
+
 ## [7.3.3] — 2026-04-03
 
 ### Bug Fixes & Improvements
