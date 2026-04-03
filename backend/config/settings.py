@@ -5,16 +5,8 @@ Centralized configuration with environment variable support and validation.
 
 from pydantic_settings import BaseSettings
 from pydantic import Field, validator
-from pathlib import Path
+from typing import Optional
 import secrets
-
-def _read_version() -> str:
-    """Read version from VERSION file at project root."""
-    version_file = Path(__file__).parent.parent.parent / "VERSION"
-    try:
-        return version_file.read_text().strip()
-    except FileNotFoundError:
-        return "0.0.0"
 
 
 class Settings(BaseSettings):
@@ -22,7 +14,7 @@ class Settings(BaseSettings):
 
     # Application
     APP_NAME: str = "Omnipath"
-    APP_VERSION: str = _read_version()
+    APP_VERSION: str = "3.0.0"
     DEBUG: bool = False
     ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production)$")
 
@@ -36,19 +28,19 @@ class Settings(BaseSettings):
 
     # Model Selection (per agent type)
     COMMANDER_PROVIDER: str = "openai"
-    COMMANDER_MODEL: str = "gpt-4-turbo"
+    COMMANDER_MODEL: str = "gpt-4.1-mini"
     COMMANDER_TEMPERATURE: float = 0.7
 
-    GUARDIAN_PROVIDER: str = "openai"  # Default to openai; override via GUARDIAN_PROVIDER env var
-    GUARDIAN_MODEL: str = "gpt-4o-mini"  # Cost-efficient safety validator; override for claude
+    GUARDIAN_PROVIDER: str = "openai"
+    GUARDIAN_MODEL: str = "gpt-4.1-mini"
     GUARDIAN_TEMPERATURE: float = 0.3  # Lower for safety
 
-    ARCHIVIST_PROVIDER: str = "google"
-    ARCHIVIST_MODEL: str = "gemini-2.0-flash-exp"
+    ARCHIVIST_PROVIDER: str = "openai"
+    ARCHIVIST_MODEL: str = "gpt-4.1-mini"
     ARCHIVIST_TEMPERATURE: float = 0.5
 
-    FORK_PROVIDER: str = "google"
-    FORK_MODEL: str = "gemini-2.0-flash-exp"
+    FORK_PROVIDER: str = "openai"
+    FORK_MODEL: str = "gpt-4.1-mini"
     FORK_TEMPERATURE: float = 0.7
 
     # Security
@@ -87,28 +79,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
     CORS_ALLOW_CREDENTIALS: bool = True
 
-    # Observability (v5.0)
-    # OpenTelemetry
-    OTEL_ENABLED: bool = True
-    OTEL_SERVICE_NAME: str = "omnipath"
-    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"
-    OTEL_EXPORTER_OTLP_INSECURE: bool = True
-
-    # Prometheus Metrics
+    # Monitoring
     PROMETHEUS_ENABLED: bool = True
     PROMETHEUS_PORT: int = 9090
-    METRICS_ENDPOINT: str = "/metrics"
-
-    # NATS Event Bus
-    NATS_ENABLED: bool = True
-    NATS_URL: str = "nats://localhost:4222"
-    NATS_CLUSTER_ID: str = "omnipath-cluster"
-    NATS_CLIENT_ID: str = "omnipath-backend"
-    NATS_MAX_RECONNECT_ATTEMPTS: int = 10
-
-    # Jaeger (for trace visualization)
-    JAEGER_AGENT_HOST: str = "localhost"
-    JAEGER_AGENT_PORT: int = 6831
 
     @validator("ENVIRONMENT")
     def validate_environment(cls, v):

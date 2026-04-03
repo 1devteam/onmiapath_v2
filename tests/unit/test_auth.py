@@ -3,26 +3,19 @@ Unit Tests for Authentication and Authorization
 Tests JWT tokens, user authentication, and role-based access control
 """
 
-import os
-
 import pytest
 from datetime import timedelta
-from jose import jwt
+from jose import jwt, JWTError
 
-# Set fixed JWT secret for testing before importing backend modules
-os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-jwt-tokens-do-not-use-in-production"
-os.environ["SECRET_KEY"] = "test-secret-key-do-not-use-in-production"
-
-from backend.middleware.auth.auth_middleware import (  # noqa: E402
+from backend.middleware.auth.auth_middleware import (
     create_access_token,
     decode_access_token,
 )
-from backend.models.domain.user import User, UserRole  # noqa: E402
-from backend.config.settings import Settings  # noqa: E402
-import backend.middleware.auth.auth_middleware as auth_module  # noqa: E402
+from backend.models.domain.user import User, UserRole, TokenData
+from backend.config.settings import Settings
+
 
 settings = Settings()
-auth_module.settings = settings  # Override the module-level settings instance
 
 
 @pytest.mark.unit
@@ -301,7 +294,7 @@ class TestProtectedEndpoints:
     def test_protected_endpoint_without_auth(self, client):
         """Test that protected endpoints reject requests without auth"""
         response = client.get("/api/v1/economy/balance")
-        assert response.status_code == 403  # Forbidden (no auth header)
+        assert response.status_code == 401
 
     def test_protected_endpoint_with_auth(self, client, auth_headers):
         """Test that protected endpoints accept valid auth"""

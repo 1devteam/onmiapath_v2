@@ -58,8 +58,8 @@ class TwitterTool(BaseTool):
         self._api_key = api_key or os.getenv("TWITTER_API_KEY", "")
         self._api_secret = api_secret or os.getenv("TWITTER_API_SECRET", "")
         self._access_token = access_token or os.getenv("TWITTER_ACCESS_TOKEN", "")
-        self._access_token_secret = (
-            access_token_secret or os.getenv("TWITTER_ACCESS_TOKEN_SECRET", "")
+        self._access_token_secret = access_token_secret or os.getenv(
+            "TWITTER_ACCESS_TOKEN_SECRET", ""
         )
         self._bearer_token = bearer_token or os.getenv("TWITTER_BEARER_TOKEN", "")
 
@@ -165,7 +165,11 @@ class TwitterTool(BaseTool):
     async def _post_tweet(self, client: Any, text: Optional[str]) -> Dict[str, Any]:
         """Post a single tweet."""
         if not text:
-            return {"success": False, "action": "post_tweet", "error": "text is required"}
+            return {
+                "success": False,
+                "action": "post_tweet",
+                "error": "text is required",
+            }
 
         if len(text) > 280:
             return {
@@ -185,12 +189,14 @@ class TwitterTool(BaseTool):
             "text": text,
         }
 
-    async def _post_thread(
-        self, client: Any, texts: Optional[List[str]]
-    ) -> Dict[str, Any]:
+    async def _post_thread(self, client: Any, texts: Optional[List[str]]) -> Dict[str, Any]:
         """Post a thread of connected tweets."""
         if not texts or len(texts) == 0:
-            return {"success": False, "action": "post_thread", "error": "texts list is required"}
+            return {
+                "success": False,
+                "action": "post_thread",
+                "error": "texts list is required",
+            }
 
         tweet_ids = []
         reply_to: Optional[str] = None
@@ -218,22 +224,30 @@ class TwitterTool(BaseTool):
             "action": "post_thread",
             "tweet_ids": tweet_ids,
             "count": len(tweet_ids),
-            "first_url": f"https://twitter.com/i/web/status/{tweet_ids[0]}" if tweet_ids else None,
+            "first_url": (
+                f"https://twitter.com/i/web/status/{tweet_ids[0]}" if tweet_ids else None
+            ),
         }
 
-    async def _get_metrics(
-        self, client: Any, tweet_id: Optional[str]
-    ) -> Dict[str, Any]:
+    async def _get_metrics(self, client: Any, tweet_id: Optional[str]) -> Dict[str, Any]:
         """Get engagement metrics for a tweet."""
         if not tweet_id:
-            return {"success": False, "action": "get_metrics", "error": "tweet_id is required"}
+            return {
+                "success": False,
+                "action": "get_metrics",
+                "error": "tweet_id is required",
+            }
 
         tweet = client.get_tweet(
             tweet_id,
             tweet_fields=["public_metrics", "created_at", "text"],
         )
         if not tweet.data:
-            return {"success": False, "action": "get_metrics", "error": f"Tweet {tweet_id} not found"}
+            return {
+                "success": False,
+                "action": "get_metrics",
+                "error": f"Tweet {tweet_id} not found",
+            }
 
         metrics = tweet.data.public_metrics or {}
         return {
@@ -253,7 +267,11 @@ class TwitterTool(BaseTool):
     ) -> Dict[str, Any]:
         """Search recent tweets."""
         if not query:
-            return {"success": False, "action": "search_tweets", "error": "query is required"}
+            return {
+                "success": False,
+                "action": "search_tweets",
+                "error": "query is required",
+            }
 
         # Clamp max_results to Twitter API limits (10-100)
         max_results = max(10, min(100, max_results))
@@ -268,13 +286,15 @@ class TwitterTool(BaseTool):
         if response.data:
             for tweet in response.data:
                 metrics = tweet.public_metrics or {}
-                tweets.append({
-                    "id": tweet.id,
-                    "text": tweet.text,
-                    "created_at": str(tweet.created_at),
-                    "likes": metrics.get("like_count", 0),
-                    "retweets": metrics.get("retweet_count", 0),
-                })
+                tweets.append(
+                    {
+                        "id": tweet.id,
+                        "text": tweet.text,
+                        "created_at": str(tweet.created_at),
+                        "likes": metrics.get("like_count", 0),
+                        "retweets": metrics.get("retweet_count", 0),
+                    }
+                )
 
         return {
             "success": True,

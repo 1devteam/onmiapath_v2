@@ -15,8 +15,8 @@ from backend.config.settings import Settings
 # Initialize settings
 settings = Settings()
 
-# Security scheme — auto_error=False so we can return 401 (not 403) for missing token
-security = HTTPBearer(auto_error=False)
+# Security scheme
+security = HTTPBearer()
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -81,50 +81,36 @@ def decode_access_token(token: str) -> TokenData:
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
-    FastAPI dependency to get the current authenticated user.
+    FastAPI dependency to get the current authenticated user
 
-    Returns 401 (not 403) when no token is provided — RFC 7235 compliance.
-    HTTPBearer(auto_error=False) allows us to handle the missing-token case
-    ourselves with the correct 401 status code.
+    This is used in route handlers like:
+        @app.get("/protected")
+        async def protected_route(current_user: User = Depends(get_current_user)):
+            return {"user": current_user.email}
 
     Args:
-        credentials: HTTP Bearer token from request header (Optional — None if missing)
+        credentials: HTTP Bearer token from request header
 
     Returns:
         User object representing the authenticated user
 
     Raises:
-        HTTPException 401: If token is missing, invalid, or expired
-        HTTPException 403: If user account is inactive
+        HTTPException: If authentication fails
     """
-    # No token provided — return 401 Unauthorized (RFC 7235)
-    if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
     token = credentials.credentials
     token_data = decode_access_token(token)
 
     # In production, you would fetch the user from the database here
     # For now, we construct a User object from the token data
-    # Resolve role — default to VIEWER if not present in token payload
-    try:
-        resolved_role = UserRole(token_data.role) if token_data.role else UserRole.VIEWER
-    except ValueError:
-        resolved_role = UserRole.VIEWER
-
     user = User(
         id=token_data.user_id,
         email=token_data.email,
         username=token_data.email.split("@")[0],  # Simple username from email
         tenant_id=token_data.tenant_id,
-        role=resolved_role,
+        role=UserRole(token_data.role),
         is_active=True,
         created_at=datetime.utcnow(),
         last_login=datetime.utcnow(),

@@ -61,12 +61,8 @@ class TestResourceMarketplace:
         self, marketplace: ResourceMarketplace, mock_user: User
     ):
         """Test that rewarding an agent increases their balance"""
-        import uuid
-
         tenant_id = mock_user.tenant_id
-        agent_id = (
-            f"reward_test_agent_{uuid.uuid4().hex[:8]}"  # Unique agent ID to avoid state pollution
-        )
+        agent_id = "test_agent"
 
         # Get initial balance
         initial_balance = await marketplace.get_balance(tenant_id, agent_id)

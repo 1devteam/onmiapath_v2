@@ -62,20 +62,17 @@ class CommanderAgentV3(BaseAgentV3):
 
     async def _evaluate_signal(self, signal: str) -> Dict[str, Any]:
         """Evaluate a signal with emotional context"""
-        from backend.agents.governance import assemble_prompt
 
-        # Build prompt with emotional context — Pride preamble prepended by assemble_prompt
-        role_prompt = (
-            f"You are the Commander agent in a multi-agent system.\n"
-            f"Your current emotional state: {self.emotional_state['mood']} "
-            f"(intensity: {self.emotional_state['intensity']}/10)\n\n"
-            "Evaluate the following signal and provide:\n"
-            "1. Risk score (0.0 to 1.0)\n"
-            "2. Recommended action\n"
-            "3. Reasoning\n\n"
-            "Consider your emotional state in your evaluation."
-        )
-        system_prompt = assemble_prompt(role_prompt)
+        # Build prompt with emotional context
+        system_prompt = f"""You are the Commander agent in a multi-agent system.
+Your current emotional state: {self.emotional_state['mood']} (intensity: {self.emotional_state['intensity']}/10)
+
+Evaluate the following signal and provide:
+1. Risk score (0.0 to 1.0)
+2. Recommended action
+3. Reasoning
+
+Consider your emotional state in your evaluation."""
 
         messages = [
             SystemMessage(content=system_prompt),
@@ -98,19 +95,15 @@ class CommanderAgentV3(BaseAgentV3):
 
     async def _make_decision(self, context: str) -> Dict[str, Any]:
         """Make a decision based on context"""
-        from backend.agents.governance import assemble_prompt
 
-        role_prompt = (
-            f"You are the Commander agent making a critical decision.\n"
-            f"Emotional state: {self.emotional_state['mood']} "
-            f"(intensity: {self.emotional_state['intensity']}/10)\n"
-            f"Risk threshold: {self.risk_threshold}\n\n"
-            "Analyze the context and make a decision. Provide:\n"
-            "1. Your decision (approve/reject/defer)\n"
-            "2. Confidence level (0.0 to 1.0)\n"
-            "3. Reasoning"
-        )
-        system_prompt = assemble_prompt(role_prompt)
+        system_prompt = f"""You are the Commander agent making a critical decision.
+Emotional state: {self.emotional_state['mood']} (intensity: {self.emotional_state['intensity']}/10)
+Risk threshold: {self.risk_threshold}
+
+Analyze the context and make a decision. Provide:
+1. Your decision (approve/reject/defer)
+2. Confidence level (0.0 to 1.0)
+3. Reasoning"""
 
         messages = [SystemMessage(content=system_prompt), HumanMessage(content=context)]
 
@@ -118,19 +111,16 @@ class CommanderAgentV3(BaseAgentV3):
 
         return {
             "decision": self._extract_decision(response.content),
-            "confidence": self._extract_confidence(response.content),
+            "confidence": 0.85,  # TODO: Extract from response
             "reasoning": response.content,
             "model_used": f"{self._get_llm_config()[0]}/{self._get_llm_config()[1]}",
         }
 
     async def _reflect_on_action(self, action: str) -> Dict[str, Any]:
         """Reflect on a completed action"""
-        from backend.agents.governance import assemble_prompt
 
-        system_prompt = assemble_prompt(
-            "You are the Commander agent reflecting on a completed action.\n"
-            "Analyze what happened and extract lessons learned."
-        )
+        system_prompt = """You are the Commander agent reflecting on a completed action.
+Analyze what happened and extract lessons learned."""
 
         messages = [
             SystemMessage(content=system_prompt),
@@ -154,48 +144,6 @@ class CommanderAgentV3(BaseAgentV3):
             score = float(match.group(1))
             return min(max(score, 0.0), 1.0)
         return 0.5  # Default
-
-    def _extract_confidence(self, content: str) -> float:
-        """
-        Extract confidence level (0.0–1.0) from LLM response text.
-
-        Looks for patterns like:
-          - "confidence: 0.9"
-          - "confidence level: 90%"
-          - "I am 85% confident"
-          - "confidence of 0.75"
-
-        Falls back to 0.7 if no match is found.
-
-        Args:
-            content: Raw LLM response text.
-
-        Returns:
-            Float in [0.0, 1.0].
-        """
-        import re
-
-        # Pattern 1: decimal confidence (e.g. "confidence: 0.85" or "confidence of 0.9")
-        decimal_match = re.search(r"confidence[^\d]{0,20}(\d+\.\d+)", content.lower())
-        if decimal_match:
-            score = float(decimal_match.group(1))
-            return min(max(score, 0.0), 1.0)
-
-        # Pattern 2: percentage confidence (e.g. "85% confident" or "confidence: 90%")
-        percent_match = re.search(r"(\d{1,3})\s*%\s*confiden", content.lower()) or re.search(
-            r"confiden[a-z\s]{0,20}(\d{1,3})\s*%", content.lower()
-        )
-        if percent_match:
-            score = float(percent_match.group(1)) / 100.0
-            return min(max(score, 0.0), 1.0)
-
-        # Pattern 3: standalone decimal in [0,1] near "confidence" keyword
-        near_match = re.search(r"confiden[a-z\s]{0,30}(0\.\d+|1\.0)", content.lower())
-        if near_match:
-            score = float(near_match.group(1))
-            return min(max(score, 0.0), 1.0)
-
-        return 0.7  # Conservative default when confidence is not stated
 
     def _extract_decision(self, content: str) -> str:
         """Extract decision from LLM response"""

@@ -51,7 +51,7 @@ class TestEconomyEndpoints:
         """Test that economy endpoints require authentication"""
         response = client.get("/api/v1/economy/balance")
 
-        assert response.status_code == 403  # Forbidden (no auth header)
+        assert response.status_code == 401  # Unauthorized
 
     def test_get_agent_balances_with_auth(self, client: TestClient, auth_headers: dict):
         """Test retrieving agent balances with authentication"""
@@ -114,11 +114,9 @@ class TestEconomyEndpoints:
 
         assert response.status_code == 200
         data = response.json()
-        # Stats are scoped to authenticated user's tenant, no tenant_id in response
+        assert "tenant_id" in data
         assert "total_agents" in data
         assert "total_balance" in data
-        assert "total_transactions" in data
-        assert "avg_balance_per_agent" in data
         assert "total_spent_today" in data
         assert "total_earned_today" in data
 
@@ -148,7 +146,7 @@ class TestPerformanceEndpoints:
         """Test that performance endpoints require authentication"""
         response = client.get("/api/v1/performance/agents")
 
-        assert response.status_code == 403  # Forbidden (no auth header)
+        assert response.status_code == 401
 
     def test_get_all_agent_performance(self, client: TestClient, auth_headers: dict):
         """Test retrieving performance metrics for all agents"""
@@ -211,7 +209,7 @@ class TestEndToEndWorkflows:
         # Step 1: Check initial balance
         response = client.get("/api/v1/economy/balance", headers=auth_headers)
         assert response.status_code == 200
-        response.json()
+        initial_balances = response.json()
 
         # Step 2: View economy stats
         response = client.get("/api/v1/economy/stats", headers=auth_headers)

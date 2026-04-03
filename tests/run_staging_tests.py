@@ -118,7 +118,9 @@ class AuthTestSuite:
                 r = await client.get(f"{self.base_url}/api/v1/auth/me")
                 passed = r.status_code == 401
                 self.log(
-                    "Reject Request Without Token", passed, f"status={r.status_code} (expected 401)"
+                    "Reject Request Without Token",
+                    passed,
+                    f"status={r.status_code} (expected 401)",
                 )
             except Exception as e:
                 self.log("Reject Request Without Token", False, str(e))
@@ -130,7 +132,11 @@ class AuthTestSuite:
                     headers={"Authorization": "Bearer invalid.token.here"},
                 )
                 passed = r.status_code == 401
-                self.log("Reject Invalid Token", passed, f"status={r.status_code} (expected 401)")
+                self.log(
+                    "Reject Invalid Token",
+                    passed,
+                    f"status={r.status_code} (expected 401)",
+                )
             except Exception as e:
                 self.log("Reject Invalid Token", False, str(e))
 
@@ -189,7 +195,9 @@ class AuthTestSuite:
                 passed = r.status_code in [409, 400, 422, 429]
                 note = "rate_limited" if r.status_code == 429 else "rejected_duplicate"
                 self.log(
-                    "Reject Duplicate Registration", passed, f"status={r.status_code} ({note})"
+                    "Reject Duplicate Registration",
+                    passed,
+                    f"status={r.status_code} ({note})",
                 )
             except Exception as e:
                 self.log("Reject Duplicate Registration", False, str(e))
@@ -216,7 +224,11 @@ class AuthTestSuite:
                 # 401 = token revoked (ideal), 429 = rate limited (also acceptable)
                 passed = r.status_code in [401, 429]
                 note = "rate_limited" if r.status_code == 429 else "token_revoked"
-                self.log("Reject Access After Logout", passed, f"status={r.status_code} ({note})")
+                self.log(
+                    "Reject Access After Logout",
+                    passed,
+                    f"status={r.status_code} ({note})",
+                )
             except Exception as e:
                 self.log("Reject Access After Logout", False, str(e))
 
@@ -259,7 +271,11 @@ class APIEndpointTestSuite:
             try:
                 reg = await client.post(
                     f"{self.base_url}/api/v1/auth/register",
-                    json={"email": self.email, "password": "ApiTest123!", "name": "API Tester"},
+                    json={
+                        "email": self.email,
+                        "password": "ApiTest123!",
+                        "name": "API Tester",
+                    },
                 )
                 if reg.status_code == 429:
                     wait = int(reg.headers.get("Retry-After", 10))
@@ -339,7 +355,10 @@ class APIEndpointTestSuite:
             try:
                 r_unauth = await client.get(f"{self.base_url}/api/v1/agents")
                 r_auth = await client.get(f"{self.base_url}/api/v1/agents", headers=headers)
-                passed = r_unauth.status_code == 401 and r_auth.status_code in [200, 404]
+                passed = r_unauth.status_code == 401 and r_auth.status_code in [
+                    200,
+                    404,
+                ]
                 self.log(
                     "GET /api/v1/agents (auth required)",
                     passed,
@@ -352,7 +371,10 @@ class APIEndpointTestSuite:
             try:
                 r_unauth = await client.get(f"{self.base_url}/api/v1/missions")
                 r_auth = await client.get(f"{self.base_url}/api/v1/missions", headers=headers)
-                passed = r_unauth.status_code == 401 and r_auth.status_code in [200, 404]
+                passed = r_unauth.status_code == 401 and r_auth.status_code in [
+                    200,
+                    404,
+                ]
                 self.log(
                     "GET /api/v1/missions (auth required)",
                     passed,
@@ -470,7 +492,11 @@ class PerformanceTestSuite:
             try:
                 reg = await client.post(
                     f"{self.base_url}/api/v1/auth/register",
-                    json={"email": self.email, "password": "PerfTest123!", "name": "Perf Tester"},
+                    json={
+                        "email": self.email,
+                        "password": "PerfTest123!",
+                        "name": "Perf Tester",
+                    },
                 )
                 if reg.status_code == 429:
                     wait = int(reg.headers.get("Retry-After", 15))
@@ -543,7 +569,9 @@ class PerformanceTestSuite:
                 avg_ms = statistics.mean(times)
                 passed = avg_ms < 500
                 self.log(
-                    "Auth/me Latency (<500ms avg)", passed, f"avg={avg_ms:.1f}ms over 10 requests"
+                    "Auth/me Latency (<500ms avg)",
+                    passed,
+                    f"avg={avg_ms:.1f}ms over 10 requests",
                 )
             except Exception as e:
                 self.log("Auth/me Latency", False, str(e))

@@ -37,6 +37,7 @@ def _check_playwright() -> bool:
     if _playwright_available is None:
         try:
             from playwright.async_api import async_playwright  # noqa: F401
+
             _playwright_available = True
         except ImportError:
             _playwright_available = False
@@ -215,17 +216,30 @@ class PlaywrightBrowserTool(BaseTool):
         }
 
     async def _click(
-        self, page: Any, selector: Optional[str] = None, wait_for: Optional[str] = None, **kwargs: Any
+        self,
+        page: Any,
+        selector: Optional[str] = None,
+        wait_for: Optional[str] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """Click an element matching a CSS selector."""
         if not selector:
-            return {"success": False, "action": "click", "error": "selector is required"}
+            return {
+                "success": False,
+                "action": "click",
+                "error": "selector is required",
+            }
 
         await page.click(selector)
         if wait_for:
             await page.wait_for_selector(wait_for)
 
-        return {"success": True, "action": "click", "selector": selector, "url": page.url}
+        return {
+            "success": True,
+            "action": "click",
+            "selector": selector,
+            "url": page.url,
+        }
 
     async def _type_text(
         self,
@@ -236,9 +250,17 @@ class PlaywrightBrowserTool(BaseTool):
     ) -> Dict[str, Any]:
         """Type text into an input element."""
         if not selector:
-            return {"success": False, "action": "type_text", "error": "selector is required"}
+            return {
+                "success": False,
+                "action": "type_text",
+                "error": "selector is required",
+            }
         if text is None:
-            return {"success": False, "action": "type_text", "error": "text is required"}
+            return {
+                "success": False,
+                "action": "type_text",
+                "error": "text is required",
+            }
 
         await page.fill(selector, text)
         return {

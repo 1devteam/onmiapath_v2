@@ -54,13 +54,14 @@ class User(BaseModel):
 
 
 class UserCreate(BaseModel):
-    """Schema for creating a new user"""
+    """Schema for creating a new user for simplified personal build"""
 
     email: EmailStr
-    username: str
-    password: str = Field(..., min_length=8, description="Password (min 8 characters)")
-    tenant_id: str
-    role: UserRole = UserRole.VIEWER
+    password: str
+
+
+class UserInDB(User):
+    hashed_password: str
 
 
 class UserLogin(BaseModel):
@@ -84,4 +85,4 @@ class TokenData(BaseModel):
     user_id: str
     email: str
     tenant_id: str
-    role: Optional[str] = None  # Optional: not all tokens include role in payload
+    role: str

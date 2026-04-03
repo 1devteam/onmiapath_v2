@@ -11,10 +11,9 @@ Provides a unified interface for creating LLM instances from multiple providers:
 Supports easy model switching via configuration.
 """
 
-from typing import Optional
+from typing import Optional, Dict, Any
 from enum import Enum
 from langchain_core.language_models import BaseChatModel
-from backend.integrations.llm.llm_metrics_wrapper import LLMMetricsWrapper
 
 
 class LLMProvider(str, Enum):
@@ -71,25 +70,22 @@ class LLMFactory:
             model = LLMFactory.DEFAULT_MODELS.get(provider)
 
         if provider == LLMProvider.OPENAI:
-            llm = LLMFactory._create_openai(model, temperature, max_tokens, api_key, **kwargs)
+            return LLMFactory._create_openai(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.ANTHROPIC:
-            llm = LLMFactory._create_anthropic(model, temperature, max_tokens, api_key, **kwargs)
+            return LLMFactory._create_anthropic(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.GOOGLE:
-            llm = LLMFactory._create_google(model, temperature, max_tokens, api_key, **kwargs)
+            return LLMFactory._create_google(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.XAI:
-            llm = LLMFactory._create_xai(model, temperature, max_tokens, api_key, **kwargs)
+            return LLMFactory._create_xai(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.OLLAMA:
-            llm = LLMFactory._create_ollama(model, temperature, max_tokens, base_url, **kwargs)
+            return LLMFactory._create_ollama(model, temperature, max_tokens, base_url, **kwargs)
 
         else:
             raise ValueError(f"Unsupported provider: {provider}")
-
-        # Wrap the LLM to record metrics
-        return LLMMetricsWrapper(llm=llm, provider=provider, model_name=model)
 
     @staticmethod
     def _create_openai(
@@ -101,12 +97,17 @@ class LLMFactory:
     ) -> BaseChatModel:
         """Create OpenAI LLM instance"""
         from langchain_openai import ChatOpenAI
+        import os
+
+        # Use Manus LLM Proxy if in sandbox environment
+        base_url = os.environ.get("OPENAI_API_BASE", "https://api.manus.im/api/llm-proxy/v1")
 
         return ChatOpenAI(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            api_key=api_key,
+            api_key=api_key or os.environ.get("OPENAI_API_KEY", "dummy"),
+            base_url=base_url,
             **kwargs,
         )
 

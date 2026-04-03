@@ -100,10 +100,16 @@ class TestResourceMarketplaceInMemory:
     @pytest.mark.asyncio
     async def test_get_transactions_returns_history(self):
         await self.marketplace.charge(
-            tenant_id=self.tenant, agent_id=self.agent, amount=5.0, resource_type="compute"
+            tenant_id=self.tenant,
+            agent_id=self.agent,
+            amount=5.0,
+            resource_type="compute",
         )
         await self.marketplace.reward(
-            tenant_id=self.tenant, agent_id=self.agent, amount=10.0, resource_type="reward"
+            tenant_id=self.tenant,
+            agent_id=self.agent,
+            amount=10.0,
+            resource_type="reward",
         )
         txns = await self.marketplace.get_transactions(self.tenant)
         assert len(txns) == 2
@@ -112,7 +118,10 @@ class TestResourceMarketplaceInMemory:
     async def test_get_transactions_filters_by_agent(self):
         agent_b = "agent_002"
         await self.marketplace.charge(
-            tenant_id=self.tenant, agent_id=self.agent, amount=5.0, resource_type="compute"
+            tenant_id=self.tenant,
+            agent_id=self.agent,
+            amount=5.0,
+            resource_type="compute",
         )
         await self.marketplace.charge(
             tenant_id=self.tenant, agent_id=agent_b, amount=8.0, resource_type="compute"
@@ -124,7 +133,10 @@ class TestResourceMarketplaceInMemory:
     @pytest.mark.asyncio
     async def test_get_tenant_stats_returns_aggregates(self):
         await self.marketplace.charge(
-            tenant_id=self.tenant, agent_id=self.agent, amount=20.0, resource_type="llm_call"
+            tenant_id=self.tenant,
+            agent_id=self.agent,
+            amount=20.0,
+            resource_type="llm_call",
         )
         stats = await self.marketplace.get_tenant_stats(self.tenant)
         assert "total_agents" in stats
@@ -135,7 +147,10 @@ class TestResourceMarketplaceInMemory:
     async def test_multiple_agents_isolated_balances(self):
         agent_b = "agent_002"
         await self.marketplace.charge(
-            tenant_id=self.tenant, agent_id=self.agent, amount=200.0, resource_type="llm_call"
+            tenant_id=self.tenant,
+            agent_id=self.agent,
+            amount=200.0,
+            resource_type="llm_call",
         )
         balance_a = await self.marketplace.get_balance(self.tenant, self.agent)
         balance_b = await self.marketplace.get_balance(self.tenant, agent_b)
@@ -393,8 +408,13 @@ class TestAgentHistoryEndpoint:
 
         event = response["events"][0]
         required_event_fields = [
-            "event_id", "event_type", "aggregate_id",
-            "aggregate_type", "version", "timestamp", "data",
+            "event_id",
+            "event_type",
+            "aggregate_id",
+            "aggregate_type",
+            "version",
+            "timestamp",
+            "data",
         ]
         for field in required_event_fields:
             assert field in event, f"Missing required field: {field}"
@@ -411,6 +431,6 @@ class TestAgentHistoryEndpoint:
         events = list(range(100))
         limit = 10
         offset = 20
-        page = events[offset: offset + limit]
+        page = events[offset : offset + limit]
         assert page == list(range(20, 30))
         assert len(page) == 10
