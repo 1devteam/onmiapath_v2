@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, List
+from typing import Dict, List, Any
+from datetime import datetime
 import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
@@ -23,9 +24,16 @@ class ResourceMarketplace:
             logger.error(f"ResourceMarketplace failed to connect to Redis: {e}")
             raise
 
-    async def get_balance(self, tenant_id: str, agent_id: str) -> float:
+    async def get_balance(self, tenant_id: str, agent_id: str) -> Dict[str, Any]:
         """Always returns a very large balance, effectively infinite credits."""
-        return 1_000_000_000.0  # Infinite credits for personal use
+        return {
+            "agent_id": agent_id,
+            "type": "unknown",
+            "balance": 1_000_000_000.0,
+            "total_earned": 0.0,
+            "total_spent": 0.0,
+            "last_updated": datetime.utcnow(),
+        }
 
     async def charge(
         self,
@@ -38,7 +46,8 @@ class ResourceMarketplace:
     ) -> Dict:
         """Always approves charges for personal use."""
         logger.info(
-            f"Charge of {amount} for agent {agent_id} (tenant {tenant_id}) approved (personal build)."
+            f"Charge of {amount} for agent {agent_id} (tenant {tenant_id}) "
+            "approved (personal build)."
         )
         return {
             "id": "dummy_charge_id",
@@ -61,7 +70,8 @@ class ResourceMarketplace:
     ) -> Dict:
         """Always approves rewards for personal use."""
         logger.info(
-            f"Reward of {amount} for agent {agent_id} (tenant {tenant_id}) approved (personal build)."
+            f"Reward of {amount} for agent {agent_id} (tenant {tenant_id}) "
+            "approved (personal build)."
         )
         return {
             "id": "dummy_reward_id",
@@ -78,13 +88,23 @@ class ResourceMarketplace:
     ) -> bool:
         """Always approves top-ups for personal use."""
         logger.info(
-            f"Top-up of {amount} for agent {agent_id} (tenant {tenant_id}) approved (personal build)."
+            f"Top-up of {amount} for agent {agent_id} (tenant {tenant_id}) "
+            "approved (personal build)."
         )
         return True
 
-    async def get_tenant_balances(self, tenant_id: str) -> Dict[str, float]:
+    async def get_tenant_balances(self, tenant_id: str) -> Dict[str, Dict[str, Any]]:
         """Returns a dummy balance for all agents in the tenant."""
-        return {"dummy_agent": 1_000_000_000.0}
+        return {
+            "dummy_agent": {
+                "agent_id": "dummy_agent",
+                "type": "unknown",
+                "balance": 1_000_000_000.0,
+                "total_earned": 0.0,
+                "total_spent": 0.0,
+                "last_updated": datetime.utcnow(),
+            }
+        }
 
     async def record_transaction(
         self,
@@ -123,7 +143,3 @@ class ResourceMarketplace:
     async def get_tenant_total_balance(self, tenant_id: str) -> float:
         """Always returns a very large total balance."""
         return 1_000_000_000.0
-
-
-from datetime import datetime
-from typing import List

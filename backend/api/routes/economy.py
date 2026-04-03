@@ -4,7 +4,7 @@ Monitor credits, transactions, and resource usage
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 

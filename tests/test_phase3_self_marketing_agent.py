@@ -485,7 +485,7 @@ class TestSocialMediaPostingSaga:
         assert "campaign.post_published" in event_types
 
     def test_saga_schedules_next_post_when_configured(self):
-        """SocialMediaPostingSaga emits campaign.next_post_scheduled when schedule_next_at is set."""
+        """SocialMediaPostingSaga emits campaign.next_post_scheduled when schedule_next_at is set."""  # noqa: E501
         from backend.core.saga.saga_orchestrator import SocialMediaPostingSaga
 
         orchestrator, event_store = self._make_orchestrator()

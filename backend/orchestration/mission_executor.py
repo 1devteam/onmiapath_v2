@@ -1,5 +1,4 @@
 import logging
-import uuid
 from datetime import datetime
 import json
 import redis.asyncio as redis
@@ -67,18 +66,20 @@ class MissionExecutor:
     async def list_tenant_missions(
         self, tenant_id: str, limit: int = 50, offset: int = 0
     ) -> List[dict]:
-        """List all missions for a tenant from Redis."""
+        """List all missions for a tenant from Redis with deterministic pagination."""
         mission_ids = await self._redis.smembers(self._get_tenant_missions_key(tenant_id))
 
         missions = []
-        for mid in list(mission_ids)[offset : offset + limit]:
+        for mid in list(mission_ids):
             m_state = await self.get_mission_state(mid)
             if m_state:
                 missions.append(m_state)
 
-        # Sort by created_at descending
+        # Sort by created_at descending (deterministic) before slicing
         missions.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-        return missions
+
+        # Apply pagination after sorting
+        return missions[offset : offset + limit]
 
     async def execute_mission(
         self,

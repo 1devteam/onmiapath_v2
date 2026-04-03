@@ -223,10 +223,7 @@ class RiskScoringEngine:
         )
 
         # Store in asset metadata
-        if not hasattr(asset, "risk_score"):
-            asset.risk_score = risk_score
-        else:
-            asset.risk_score = risk_score
+        asset.risk_score = risk_score
 
         return risk_score
 

@@ -1,6 +1,3 @@
-import logging
-
-
 class DummyTracer:
     def start_as_current_span(self, name, *args, **kwargs):
         class DummySpan:

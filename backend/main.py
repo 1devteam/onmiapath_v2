@@ -13,7 +13,7 @@ import logging
 from backend.config.settings import Settings
 
 # Import API routes
-from backend.api.routes import economy, missions_v45, auth
+from backend.api.routes import economy, missions_v45, auth, metrics, performance
 
 # Configure logging
 logging.basicConfig(
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Multi-agent AI system with emotional intelligence, agent economy, and self-improvement capabilities",
+    description="Multi-agent AI system with emotional intelligence, agent economy, and self-improvement",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -69,7 +69,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.DEBUG else ["https://yourdomain.com"],
+    allow_origins=settings.CORS_ORIGINS if not settings.DEBUG else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -122,9 +122,10 @@ async def root():
 
 # Include API routers
 app.include_router(economy.router)
-
 app.include_router(missions_v45.router)
 app.include_router(auth.router)
+app.include_router(metrics.router)
+app.include_router(performance.router)
 
 
 # Startup message
@@ -133,8 +134,8 @@ async def startup_message():
     """Log startup completion"""
     logger.info("=" * 60)
     logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} is ready!")
-    logger.info(f"API Documentation: http://localhost:8000/docs")
-    logger.info(f"Health Check: http://localhost:8000/health")
+    logger.info("API Documentation: http://localhost:8000/docs")
+    logger.info("Health Check: http://localhost:8000/health")
 
     logger.info("=" * 60)
 

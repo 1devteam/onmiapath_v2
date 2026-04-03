@@ -151,7 +151,10 @@ class TwitterTool(BaseTool):
             else:
                 return {
                     "success": False,
-                    "error": f"Unknown action '{action}'. Valid: post_tweet, post_thread, get_metrics, search_tweets",
+                    "error": (
+                        f"Unknown action '{action}'. "
+                        "Valid: post_tweet, post_thread, get_metrics, search_tweets"
+                    ),
                 }
 
         except Exception as exc:
@@ -175,7 +178,9 @@ class TwitterTool(BaseTool):
             return {
                 "success": False,
                 "action": "post_tweet",
-                "error": f"Tweet exceeds 280 chars ({len(text)} chars). Truncate or use post_thread.",
+                "error": (
+                    f"Tweet exceeds 280 chars ({len(text)} chars). " "Truncate or use post_thread."
+                ),
             }
 
         response = client.create_tweet(text=text)

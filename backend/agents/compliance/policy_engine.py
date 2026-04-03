@@ -10,11 +10,11 @@ Date: 2026-02-27
 Built with Pride for Obex Blackvault
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-import uuid
 
 
 # ============================================================================
@@ -307,25 +307,24 @@ class PolicyTemplate:
         )
 
         self.usage_count += 1
-
         return policy
 
 
 # ============================================================================
-# Policy Template Library
+# Template Library
 # ============================================================================
 
 
 class PolicyTemplateLibrary:
-    """Library of pre-built policy templates."""
+    """Library of built-in policy templates."""
 
     @staticmethod
     def get_gdpr_pii_protection() -> PolicyTemplate:
-        """GDPR PII protection template."""
+        """Template for GDPR PII protection."""
         return PolicyTemplate(
-            template_id="tmpl-gdpr-pii",
+            template_id="gdpr-pii-protection",
             name="GDPR PII Protection",
-            description="Enforce GDPR requirements for PII handling",
+            description="Enforce strict protection for PII under GDPR",
             category="data_protection",
             conditions=[
                 PolicyCondition(
@@ -336,24 +335,8 @@ class PolicyTemplateLibrary:
                 )
             ],
             actions=[
-                PolicyAction(
-                    action_type=ActionType.REQUIRE_APPROVAL,
-                    parameters={
-                        "min_authority_level": 3,
-                        "reason": "GDPR: PII processing requires approval",
-                    },
-                ),
-                PolicyAction(
-                    action_type=ActionType.ADD_TAG,
-                    parameters={"tags": ["gdpr", "requires-dpia"]},
-                ),
-                PolicyAction(
-                    action_type=ActionType.LOG_EVENT,
-                    parameters={
-                        "event_type": "gdpr_pii_access",
-                        "severity": "high",
-                    },
-                ),
+                PolicyAction(action_type=ActionType.REQUIRE_APPROVAL, parameters={"level": "high"}),
+                PolicyAction(action_type=ActionType.LOG_EVENT, parameters={"audit": True}),
             ],
             created_at=datetime.utcnow(),
             created_by="system",
@@ -361,11 +344,11 @@ class PolicyTemplateLibrary:
 
     @staticmethod
     def get_hipaa_phi_protection() -> PolicyTemplate:
-        """HIPAA PHI protection template."""
+        """Template for HIPAA PHI protection."""
         return PolicyTemplate(
-            template_id="tmpl-hipaa-phi",
+            template_id="hipaa-phi-protection",
             name="HIPAA PHI Protection",
-            description="Enforce HIPAA requirements for PHI handling",
+            description="Enforce protection for PHI under HIPAA",
             category="data_protection",
             conditions=[
                 PolicyCondition(
@@ -377,22 +360,10 @@ class PolicyTemplateLibrary:
             ],
             actions=[
                 PolicyAction(
-                    action_type=ActionType.REQUIRE_APPROVAL,
-                    parameters={
-                        "min_authority_level": 4,
-                        "reason": "HIPAA: PHI access requires Compliance Officer approval",
-                    },
+                    action_type=ActionType.DENY, parameters={"reason": "PHI access denied"}
                 ),
                 PolicyAction(
-                    action_type=ActionType.ADD_TAG,
-                    parameters={"tags": ["hipaa", "healthcare"]},
-                ),
-                PolicyAction(
-                    action_type=ActionType.LOG_EVENT,
-                    parameters={
-                        "event_type": "hipaa_phi_access",
-                        "severity": "critical",
-                    },
+                    action_type=ActionType.SEND_ALERT, parameters={"severity": "critical"}
                 ),
             ],
             created_at=datetime.utcnow(),
@@ -401,28 +372,30 @@ class PolicyTemplateLibrary:
 
     @staticmethod
     def get_production_deployment_gate() -> PolicyTemplate:
-        """Production deployment approval template."""
+        """Template for production deployment gate."""
         return PolicyTemplate(
-            template_id="tmpl-prod-gate",
+            template_id="production-deployment-gate",
             name="Production Deployment Gate",
             description="Require approval for production deployments",
             category="operational",
             conditions=[
                 PolicyCondition(
-                    condition_type=ConditionType.METADATA_FIELD,
-                    operator=ConditionOperator.EQUALS,
-                    field="location",
+                    condition_type=ConditionType.ASSET_TAG,
+                    operator=ConditionOperator.CONTAINS,
+                    field="tags",
                     value="production",
-                )
+                ),
+                PolicyCondition(
+                    condition_type=ConditionType.ASSET_STATUS,
+                    operator=ConditionOperator.EQUALS,
+                    field="status",
+                    value="pending",
+                ),
             ],
             actions=[
                 PolicyAction(
-                    action_type=ActionType.REQUIRE_APPROVAL,
-                    parameters={
-                        "min_authority_level": 3,
-                        "reason": "Production deployment requires Admin approval",
-                    },
-                ),
+                    action_type=ActionType.REQUIRE_APPROVAL, parameters={"role": "release_manager"}
+                )
             ],
             created_at=datetime.utcnow(),
             created_by="system",
@@ -430,35 +403,25 @@ class PolicyTemplateLibrary:
 
     @staticmethod
     def get_high_risk_approval() -> PolicyTemplate:
-        """High-risk asset approval template."""
+        """Template for high risk approval."""
         return PolicyTemplate(
-            template_id="tmpl-high-risk",
-            name="High-Risk Asset Approval",
-            description="Require approval for high-risk assets",
+            template_id="high-risk-approval",
+            name="High Risk Approval",
+            description="Require approval for high risk assets",
             category="risk_management",
             conditions=[
                 PolicyCondition(
                     condition_type=ConditionType.RISK_TIER,
                     operator=ConditionOperator.IN,
                     field="risk_tier",
-                    value=["HIGH", "CRITICAL"],
+                    value=["high", "critical"],
                 )
             ],
             actions=[
                 PolicyAction(
                     action_type=ActionType.REQUIRE_APPROVAL,
-                    parameters={
-                        "min_authority_level": 3,
-                        "reason": "High-risk assets require Admin approval",
-                    },
-                ),
-                PolicyAction(
-                    action_type=ActionType.SEND_ALERT,
-                    parameters={
-                        "recipients": ["compliance-team"],
-                        "message": "High-risk asset requires review",
-                    },
-                ),
+                    parameters={"role": "compliance_officer"},
+                )
             ],
             created_at=datetime.utcnow(),
             created_by="system",
@@ -466,35 +429,30 @@ class PolicyTemplateLibrary:
 
     @staticmethod
     def get_business_hours_restriction() -> PolicyTemplate:
-        """Business hours restriction template."""
+        """Template for business hours restriction."""
         return PolicyTemplate(
-            template_id="tmpl-business-hours",
+            template_id="business-hours-restriction",
             name="Business Hours Restriction",
-            description="Restrict high-risk operations to business hours",
+            description="Restrict high-impact operations to business hours",
             category="operational",
             conditions=[
+                PolicyCondition(
+                    condition_type=ConditionType.TIME_OF_DAY,
+                    operator=ConditionOperator.NOT_BETWEEN,
+                    field="time",
+                    value=["08:00", "18:00"],
+                ),
                 PolicyCondition(
                     condition_type=ConditionType.RISK_TIER,
                     operator=ConditionOperator.IN,
                     field="risk_tier",
-                    value=["HIGH", "CRITICAL"],
-                    and_conditions=[
-                        PolicyCondition(
-                            condition_type=ConditionType.TIME_OF_DAY,
-                            operator=ConditionOperator.NOT_BETWEEN,
-                            field="time",
-                            value=["09:00", "17:00"],
-                        )
-                    ],
-                )
+                    value=["high", "critical"],
+                ),
             ],
             actions=[
                 PolicyAction(
-                    action_type=ActionType.DENY,
-                    parameters={
-                        "reason": "High-risk operations only allowed during business hours (9am-5pm)",  # noqa: E501
-                    },
-                ),
+                    action_type=ActionType.DENY, parameters={"reason": "Outside business hours"}
+                )
             ],
             created_at=datetime.utcnow(),
             created_by="system",

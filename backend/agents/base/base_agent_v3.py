@@ -191,17 +191,14 @@ class BaseAgentV3(ABC):
     @abstractmethod
     async def validate(self):
         """Validate mission parameters and preconditions"""
-        pass
 
     @abstractmethod
     async def initialize(self):
         """Initialize agent resources and state"""
-        pass
 
     @abstractmethod
     async def run(self) -> Dict[str, Any]:
         """Execute the agent's core logic"""
-        pass
 
     async def shutdown(self):
         """Clean up agent resources"""
