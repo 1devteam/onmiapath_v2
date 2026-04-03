@@ -16,6 +16,18 @@ class ResourceMarketplace:
         self.redis_client = redis.from_url(redis_url, decode_responses=True)
         logger.info(f"ResourceMarketplace initialized with Redis at {redis_url}")
 
+    @staticmethod
+    def _build_balance_payload(agent_id: str, agent_type: str = "unknown") -> Dict[str, Any]:
+        """Return a structured balance payload consumed by economy API response models."""
+        return {
+            "agent_id": agent_id,
+            "type": agent_type,
+            "balance": 1_000_000_000.0,
+            "total_earned": 0.0,
+            "total_spent": 0.0,
+            "last_updated": datetime.utcnow(),
+        }
+
     async def connect(self):
         try:
             await self.redis_client.ping()
@@ -26,14 +38,7 @@ class ResourceMarketplace:
 
     async def get_balance(self, tenant_id: str, agent_id: str) -> Dict[str, Any]:
         """Always returns a very large balance, effectively infinite credits."""
-        return {
-            "agent_id": agent_id,
-            "type": "unknown",
-            "balance": 1_000_000_000.0,
-            "total_earned": 0.0,
-            "total_spent": 0.0,
-            "last_updated": datetime.utcnow(),
-        }
+        return self._build_balance_payload(agent_id=agent_id)
 
     async def charge(
         self,
@@ -95,16 +100,7 @@ class ResourceMarketplace:
 
     async def get_tenant_balances(self, tenant_id: str) -> Dict[str, Dict[str, Any]]:
         """Returns a dummy balance for all agents in the tenant."""
-        return {
-            "dummy_agent": {
-                "agent_id": "dummy_agent",
-                "type": "unknown",
-                "balance": 1_000_000_000.0,
-                "total_earned": 0.0,
-                "total_spent": 0.0,
-                "last_updated": datetime.utcnow(),
-            }
-        }
+        return {"dummy_agent": self._build_balance_payload(agent_id="dummy_agent")}
 
     async def record_transaction(
         self,

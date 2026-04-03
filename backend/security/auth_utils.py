@@ -4,10 +4,11 @@ import logging
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from fastapi import Query, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
 from backend.config.settings import Settings
-from backend.models.domain.user import User, UserInDB, UserRole
+from backend.models.domain.user import User, UserInDB, UserRole, UserCreate
 
 settings = Settings()
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 in_memory_users_db: Dict[str, Dict[str, Any]] = {}
 ADMIN_BYPASS_USER_EMAIL = "admin@example.com"
 ADMIN_BYPASS_USER_USERNAME = "admin"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
 def get_password_hash(password: str) -> str:
@@ -93,10 +95,9 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-async def get_current_user(token: str = Query(...)) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     """
-    FastAPI dependency to get the current authenticated user from a query parameter.
-    Mainly used for simplified personal builds and testing.
+    FastAPI dependency that authenticates users from Authorization: Bearer <token>.
     """
     # Bypass for local testing/personal build
     if token == "admin-token":

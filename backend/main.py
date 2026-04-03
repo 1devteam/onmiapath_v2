@@ -124,6 +124,7 @@ async def root():
 app.include_router(economy.router)
 app.include_router(missions_v45.router)
 app.include_router(auth.router)
+# Monitoring and performance routers must remain mounted for existing clients.
 app.include_router(metrics.router)
 app.include_router(performance.router)
 
