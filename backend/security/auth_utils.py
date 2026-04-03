@@ -22,6 +22,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 in_memory_users_db: Dict[str, Dict[str, Any]] = {}
 security = HTTPBearer(auto_error=False)
 
+ADMIN_BYPASS_USER_EMAIL = "admin@example.com"
+ADMIN_BYPASS_USER_USERNAME = "admin"
+
 
 class UserCreate(BaseModel):
     """Request model for user registration."""
@@ -120,8 +123,8 @@ async def get_current_user(
     if token == "admin-token":
         return User(
             id="admin-id",
-            email="admin@omnipath.com",
-            username="admin",
+            email=ADMIN_BYPASS_USER_EMAIL,
+            username=ADMIN_BYPASS_USER_USERNAME,
             tenant_id="default-tenant",
             role=UserRole.ADMIN,
             is_active=True,
