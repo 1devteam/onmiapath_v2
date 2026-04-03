@@ -176,16 +176,12 @@ class ScheduledJob(Base):
     # Execution tracking
     last_run_at = Column(DateTime, nullable=True)
     next_run_at = Column(DateTime, nullable=True)
-    last_run_status = Column(
-        String(50), nullable=True
-    )  # 'success' | 'failed' | 'running'
+    last_run_status = Column(String(50), nullable=True)  # 'success' | 'failed' | 'running'
     last_run_mission_id = Column(String(50), nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     tenant = relationship("Tenant")
@@ -230,9 +226,7 @@ class ExternalAPIKey(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     last_used_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -283,9 +277,7 @@ class Workforce(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     last_run_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -311,9 +303,7 @@ class WorkforceMember(Base):
     id = Column(String(50), primary_key=True, index=True)
 
     # Foreign keys
-    workforce_id = Column(
-        String(50), ForeignKey("workforces.id"), nullable=False, index=True
-    )
+    workforce_id = Column(String(50), ForeignKey("workforces.id"), nullable=False, index=True)
     agent_id = Column(String(50), ForeignKey("agents.id"), nullable=False, index=True)
 
     # Role assignment
@@ -356,18 +346,14 @@ class Lead(Base):
     # Ownership
     tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=False, index=True)
     created_by = Column(String(50), ForeignKey("users.id"), nullable=False)
-    assigned_agent_id = Column(
-        String(50), ForeignKey("agents.id"), nullable=True, index=True
-    )
+    assigned_agent_id = Column(String(50), ForeignKey("agents.id"), nullable=True, index=True)
 
     # Identity
     company_name = Column(String(255), nullable=False, index=True)
     contact_name = Column(String(255), nullable=True)
     contact_email = Column(String(255), nullable=True, index=True)
     contact_title = Column(String(255), nullable=True)
-    contact_linkedin = Column(
-        String(500), nullable=True
-    )  # LinkedIn profile URL of contact
+    contact_linkedin = Column(String(500), nullable=True)  # LinkedIn profile URL of contact
     website = Column(String(500), nullable=True)
     linkedin_url = Column(String(500), nullable=True)
 
@@ -389,24 +375,18 @@ class Lead(Base):
     research_data = Column(JSON, default=dict, nullable=False)
 
     # Financials (denormalised from Opportunity for quick access)
-    estimated_value = Column(
-        Numeric(12, 2), nullable=True
-    )  # USD — set during qualification
+    estimated_value = Column(Numeric(12, 2), nullable=True)  # USD — set during qualification
 
     # Notes
     notes = Column(Text, nullable=True)
 
     # Source tracking
-    source = Column(
-        String(100), nullable=True
-    )  # 'web_search' | 'linkedin' | 'manual' | 'referral'
+    source = Column(String(100), nullable=True)  # 'web_search' | 'linkedin' | 'manual' | 'referral'
     source_url = Column(String(500), nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     qualified_at = Column(DateTime, nullable=True)
     converted_at = Column(DateTime, nullable=True)
 
@@ -414,9 +394,7 @@ class Lead(Base):
     tenant = relationship("Tenant")
     creator = relationship("User", foreign_keys=[created_by])
     assigned_agent = relationship("Agent", foreign_keys=[assigned_agent_id])
-    opportunities = relationship(
-        "Opportunity", back_populates="lead", cascade="all, delete-orphan"
-    )
+    opportunities = relationship("Opportunity", back_populates="lead", cascade="all, delete-orphan")
 
 
 class Opportunity(Base):
@@ -437,9 +415,7 @@ class Opportunity(Base):
     # Ownership
     tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=False, index=True)
     lead_id = Column(String(50), ForeignKey("leads.id"), nullable=False, index=True)
-    assigned_agent_id = Column(
-        String(50), ForeignKey("agents.id"), nullable=True, index=True
-    )
+    assigned_agent_id = Column(String(50), ForeignKey("agents.id"), nullable=True, index=True)
 
     # Identity
     name = Column(String(255), nullable=False)
@@ -465,17 +441,13 @@ class Opportunity(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     tenant = relationship("Tenant")
     lead = relationship("Lead", back_populates="opportunities")
     assigned_agent = relationship("Agent", foreign_keys=[assigned_agent_id])
-    proposals = relationship(
-        "Proposal", back_populates="opportunity", cascade="all, delete-orphan"
-    )
+    proposals = relationship("Proposal", back_populates="opportunity", cascade="all, delete-orphan")
     deal = relationship("Deal", back_populates="opportunity", uselist=False)
 
 
@@ -496,9 +468,7 @@ class Proposal(Base):
 
     # Ownership
     tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=False, index=True)
-    opportunity_id = Column(
-        String(50), ForeignKey("opportunities.id"), nullable=False, index=True
-    )
+    opportunity_id = Column(String(50), ForeignKey("opportunities.id"), nullable=False, index=True)
     generated_by_agent_id = Column(String(50), ForeignKey("agents.id"), nullable=True)
 
     # Content
@@ -510,17 +480,13 @@ class Proposal(Base):
     # Delivery
     status = Column(String(50), nullable=False, default="draft", index=True)
     # draft | sent | viewed | accepted | rejected | expired
-    sent_via = Column(
-        String(50), nullable=True
-    )  # 'email' | 'linkedin' | 'twitter' | 'manual'
+    sent_via = Column(String(50), nullable=True)  # 'email' | 'linkedin' | 'twitter' | 'manual'
     sent_to_email = Column(String(255), nullable=True)
     sent_to_linkedin = Column(String(500), nullable=True)
 
     # Response tracking
     response_received = Column(Boolean, default=False, nullable=False)
-    response_sentiment = Column(
-        String(50), nullable=True
-    )  # 'positive' | 'neutral' | 'negative'
+    response_sentiment = Column(String(50), nullable=True)  # 'positive' | 'neutral' | 'negative'
     response_notes = Column(Text, nullable=True)
 
     # Version tracking
@@ -528,9 +494,7 @@ class Proposal(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     sent_at = Column(DateTime, nullable=True)
     viewed_at = Column(DateTime, nullable=True)
     responded_at = Column(DateTime, nullable=True)
@@ -559,9 +523,7 @@ class Deal(Base):
 
     # Ownership
     tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=False, index=True)
-    opportunity_id = Column(
-        String(50), ForeignKey("opportunities.id"), nullable=False, unique=True
-    )
+    opportunity_id = Column(String(50), ForeignKey("opportunities.id"), nullable=False, unique=True)
     lead_id = Column(
         String(50), ForeignKey("leads.id"), nullable=True, index=True
     )  # Denormalised for fast lookup
@@ -579,27 +541,19 @@ class Deal(Base):
     paid_at = Column(DateTime, nullable=True)
 
     # Attribution
-    source_campaign = Column(
-        String(255), nullable=True
-    )  # Which campaign generated this deal
-    attributed_workforce_id = Column(
-        String(50), ForeignKey("workforces.id"), nullable=True
-    )
+    source_campaign = Column(String(255), nullable=True)  # Which campaign generated this deal
+    attributed_workforce_id = Column(String(50), ForeignKey("workforces.id"), nullable=True)
 
     # Notes
     notes = Column(Text, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     closed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
     tenant = relationship("Tenant")
     opportunity = relationship("Opportunity", back_populates="deal")
     closed_by = relationship("Agent", foreign_keys=[closed_by_agent_id])
-    attributed_workforce = relationship(
-        "Workforce", foreign_keys=[attributed_workforce_id]
-    )
+    attributed_workforce = relationship("Workforce", foreign_keys=[attributed_workforce_id])

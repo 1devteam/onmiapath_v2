@@ -95,9 +95,7 @@ async def get_all_agent_performance(current_user: User = Depends(get_current_use
 
 
 @router.get("/agents/{agent_id}", response_model=AgentPerformanceMetrics)
-async def get_agent_performance(
-    agent_id: str, current_user: User = Depends(get_current_user)
-):
+async def get_agent_performance(agent_id: str, current_user: User = Depends(get_current_user)):
     """Get performance metrics for a specific agent"""
     # TODO: Implement actual database query
     raise HTTPException(status_code=501, detail="Not implemented yet")
@@ -145,9 +143,7 @@ async def get_performance_trends(
 
 
 @router.post("/trigger-improvement/{agent_id}")
-async def trigger_manual_improvement(
-    agent_id: str, current_user: User = Depends(get_current_user)
-):
+async def trigger_manual_improvement(agent_id: str, current_user: User = Depends(get_current_user)):
     """
     Manually trigger self-improvement analysis for an agent
 

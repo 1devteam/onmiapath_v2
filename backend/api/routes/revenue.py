@@ -295,9 +295,7 @@ async def get_lead(
 ) -> LeadResponse:
     """Get a single lead by ID."""
     tenant_id = current_user.get("tenant_id", "default")
-    lead = (
-        db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
-    )
+    lead = db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return _lead_to_response(lead)
@@ -312,9 +310,7 @@ async def update_lead(
 ) -> LeadResponse:
     """Update a lead."""
     tenant_id = current_user.get("tenant_id", "default")
-    lead = (
-        db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
-    )
+    lead = db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     update_data = payload.dict(exclude_unset=True)
@@ -334,9 +330,7 @@ async def delete_lead(
 ) -> None:
     """Delete a lead."""
     tenant_id = current_user.get("tenant_id", "default")
-    lead = (
-        db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
-    )
+    lead = db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     db.delete(lead)
@@ -355,9 +349,7 @@ async def qualify_lead(
     Updates the lead's qualification_score, notes, and estimated_value.
     """
     tenant_id = current_user.get("tenant_id", "default")
-    lead = (
-        db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
-    )
+    lead = db.query(Lead).filter(Lead.id == lead_id, Lead.tenant_id == tenant_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
@@ -379,12 +371,10 @@ async def qualify_lead(
             company_size=lead.company_size,
             research_data=lead.research_data or {},
         )
-        score, notes, contact_title, est_value, prob = (
-            await revenue_agent._qualify_lead(
-                lead=lead_record,
-                value_proposition=payload.value_proposition,
-                ideal_customer_profile=payload.ideal_customer_profile,
-            )
+        score, notes, contact_title, est_value, prob = await revenue_agent._qualify_lead(
+            lead=lead_record,
+            value_proposition=payload.value_proposition,
+            ideal_customer_profile=payload.ideal_customer_profile,
         )
         lead.qualification_score = score
         lead.qualification_notes = notes
@@ -500,11 +490,7 @@ async def run_deal_saga(
     """
     tenant_id = current_user.get("tenant_id", "default")
 
-    lead = (
-        db.query(Lead)
-        .filter(Lead.id == payload.lead_id, Lead.tenant_id == tenant_id)
-        .first()
-    )
+    lead = db.query(Lead).filter(Lead.id == payload.lead_id, Lead.tenant_id == tenant_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
@@ -591,9 +577,7 @@ async def get_revenue_dashboard(
 
     total_leads = db.query(Lead).filter(Lead.tenant_id == tenant_id).count()
     qualified_leads = (
-        db.query(Lead)
-        .filter(Lead.tenant_id == tenant_id, Lead.status == "qualified")
-        .count()
+        db.query(Lead).filter(Lead.tenant_id == tenant_id, Lead.status == "qualified").count()
     )
     open_opps = (
         db.query(Opportunity)
@@ -642,9 +626,7 @@ async def get_revenue_dashboard(
         .limit(5)
         .all()
     )
-    top_industries = [
-        {"industry": row.industry, "count": row.count} for row in industry_counts
-    ]
+    top_industries = [{"industry": row.industry, "count": row.count} for row in industry_counts]
 
     return RevenueDashboard(
         total_leads=total_leads,

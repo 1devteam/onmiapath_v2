@@ -194,10 +194,7 @@ Note: Only reads files in allowed directories."""
             abs_path = os.path.abspath(file_path)
 
             # Check if path is in allowed directories
-            allowed = any(
-                abs_path.startswith(os.path.abspath(d))
-                for d in self.allowed_directories
-            )
+            allowed = any(abs_path.startswith(os.path.abspath(d)) for d in self.allowed_directories)
 
             if not allowed:
                 return {
@@ -269,10 +266,7 @@ Note: Only writes to allowed directories."""
             abs_path = os.path.abspath(file_path)
 
             # Check if path is in allowed directories
-            allowed = any(
-                abs_path.startswith(os.path.abspath(d))
-                for d in self.allowed_directories
-            )
+            allowed = any(abs_path.startswith(os.path.abspath(d)) for d in self.allowed_directories)
 
             if not allowed:
                 return {

@@ -77,28 +77,20 @@ class AgentFactory:
             llm = self.llm_service.get_llm(agent_type_lower, tenant_id)
         except Exception as e:
             logger.error(f"Failed to create LLM for {agent_type}: {e}")
-            raise ValueError(
-                f"Failed to create LLM for agent type {agent_type}: {str(e)}"
-            )
+            raise ValueError(f"Failed to create LLM for agent type {agent_type}: {str(e)}")
 
         # Create the specialized agent
         try:
             if agent_type_lower == "researcher":
-                agent = ResearcherAgent(
-                    agent_id=agent_id, llm=llm, tenant_id=tenant_id, **kwargs
-                )
+                agent = ResearcherAgent(agent_id=agent_id, llm=llm, tenant_id=tenant_id, **kwargs)
                 logger.info(f"Created ResearcherAgent: {agent_id}")
 
             elif agent_type_lower == "analyst":
-                agent = AnalystAgent(
-                    agent_id=agent_id, llm=llm, tenant_id=tenant_id, **kwargs
-                )
+                agent = AnalystAgent(agent_id=agent_id, llm=llm, tenant_id=tenant_id, **kwargs)
                 logger.info(f"Created AnalystAgent: {agent_id}")
 
             elif agent_type_lower == "developer":
-                agent = DeveloperAgent(
-                    agent_id=agent_id, llm=llm, tenant_id=tenant_id, **kwargs
-                )
+                agent = DeveloperAgent(agent_id=agent_id, llm=llm, tenant_id=tenant_id, **kwargs)
                 logger.info(f"Created DeveloperAgent: {agent_id}")
 
             # Record agent creation metric
@@ -113,9 +105,7 @@ class AgentFactory:
                         tenant_id=tenant_id,
                         owner_id=kwargs.get("owner_id", "system"),
                         name=kwargs.get("name", f"{agent_type_lower}_agent"),
-                        model=(
-                            llm.model_name if hasattr(llm, "model_name") else "unknown"
-                        ),
+                        model=(llm.model_name if hasattr(llm, "model_name") else "unknown"),
                         capabilities=kwargs.get("capabilities", []),
                         config=kwargs,
                     )
@@ -232,22 +222,16 @@ class AgentFactory:
         if requires_tools:
             # If web search is needed, use researcher
             if "web_search" in requires_tools or "search" in requires_tools:
-                logger.info(
-                    f"Selected ResearcherAgent (tools required): {mission_goal[:50]}..."
-                )
+                logger.info(f"Selected ResearcherAgent (tools required): {mission_goal[:50]}...")
                 return "researcher"
 
             # If code execution is needed, use developer
             if "code_execution" in requires_tools or "python" in requires_tools:
-                logger.info(
-                    f"Selected DeveloperAgent (tools required): {mission_goal[:50]}..."
-                )
+                logger.info(f"Selected DeveloperAgent (tools required): {mission_goal[:50]}...")
                 return "developer"
 
             # Default to researcher for other tool-using missions
-            logger.info(
-                f"Selected ResearcherAgent (default for tools): {mission_goal[:50]}..."
-            )
+            logger.info(f"Selected ResearcherAgent (default for tools): {mission_goal[:50]}...")
             return "researcher"
 
         # Default to simple execution (no specialized agent)

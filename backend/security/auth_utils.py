@@ -38,7 +38,9 @@ async def get_user_from_db(email: str) -> Optional[UserInDB]:
 
 async def create_user_in_db(email: str, hashed_password: str) -> UserInDB:
     user_id = f"user-{len(in_memory_users_db) + 1}"
-    tenant_id = f"tenant-{len(in_memory_users_db) + 1}"  # Each user gets their own tenant for simplicity
+    tenant_id = (
+        f"tenant-{len(in_memory_users_db) + 1}"  # Each user gets their own tenant for simplicity
+    )
     username = email.split("@")[0]
     user_data = {
         "id": user_id,
@@ -67,21 +69,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.utcnow() + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 
 
 def decode_access_token(token: str):
     try:
-        payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except JWTError:
         return None

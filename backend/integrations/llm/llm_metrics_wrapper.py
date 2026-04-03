@@ -42,9 +42,7 @@ class LLMMetricsWrapper(BaseChatModel):
     model_name: str = Field(description="The model name")
 
     def __init__(self, llm: BaseChatModel, provider: str, model_name: str, **kwargs):
-        super().__init__(
-            llm_instance=llm, provider=provider, model_name=model_name, **kwargs
-        )
+        super().__init__(llm_instance=llm, provider=provider, model_name=model_name, **kwargs)
 
     def _generate(
         self,
@@ -89,9 +87,7 @@ class LLMMetricsWrapper(BaseChatModel):
 
     def _record_metrics(self, result: ChatResult, duration: float) -> None:
         """Record Prometheus metrics for a completed LLM call."""
-        token_usage = (
-            result.llm_output.get("token_usage", {}) if result.llm_output else {}
-        )
+        token_usage = result.llm_output.get("token_usage", {}) if result.llm_output else {}
         get_metrics().record_llm_call(
             provider=self.provider,
             model=self.model_name,

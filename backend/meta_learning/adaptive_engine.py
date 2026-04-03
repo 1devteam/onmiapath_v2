@@ -180,9 +180,7 @@ class AdaptiveLearningEngine:
             stats["avg_quality"] = stats["total_quality"] / stats["count"]
 
             # Calculate composite score (success_rate * quality / cost)
-            score = (stats["success_rate"] * stats["avg_quality"]) / max(
-                stats["avg_cost"], 0.1
-            )
+            score = (stats["success_rate"] * stats["avg_quality"]) / max(stats["avg_cost"], 0.1)
             stats["composite_score"] = round(score, 3)
 
             if score > best_score:
@@ -245,9 +243,7 @@ class AdaptiveLearningEngine:
         successful_outcomes = [o for o in outcomes if o.outcome == OutcomeType.SUCCESS]
 
         if successful_outcomes:
-            avg_cost_success = sum(o.cost for o in successful_outcomes) / len(
-                successful_outcomes
-            )
+            avg_cost_success = sum(o.cost for o in successful_outcomes) / len(successful_outcomes)
         else:
             avg_cost_success = 0
 
@@ -411,10 +407,7 @@ class AdaptiveLearningEngine:
         config = AgentConfiguration(agent_id=agent_id)
 
         # Set preferred model
-        if (
-            "model_analysis" in analysis
-            and "recommended_model" in analysis["model_analysis"]
-        ):
+        if "model_analysis" in analysis and "recommended_model" in analysis["model_analysis"]:
             config.preferred_model = analysis["model_analysis"]["recommended_model"]
 
         # Set optimal complexity
@@ -422,9 +415,7 @@ class AdaptiveLearningEngine:
             "complexity_analysis" in analysis
             and "recommended_complexity" in analysis["complexity_analysis"]
         ):
-            config.optimal_complexity = analysis["complexity_analysis"][
-                "recommended_complexity"
-            ]
+            config.optimal_complexity = analysis["complexity_analysis"]["recommended_complexity"]
 
         # Set cost limits
         if "cost_analysis" in analysis:

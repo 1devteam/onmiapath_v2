@@ -191,23 +191,15 @@ async def marketplace_with_data(
     tenant_id = mock_user.tenant_id
 
     # Create agents with different balances
-    await marketplace.charge(
-        tenant_id, "agent_commander", 50.0, "llm_call", agent_type="commander"
-    )
+    await marketplace.charge(tenant_id, "agent_commander", 50.0, "llm_call", agent_type="commander")
     await marketplace.reward(
         tenant_id, "agent_commander", 100.0, "mission_success", agent_type="commander"
     )
 
-    await marketplace.charge(
-        tenant_id, "agent_guardian", 10.0, "llm_call", agent_type="guardian"
-    )
-    await marketplace.charge(
-        tenant_id, "agent_guardian", 5.0, "compute", agent_type="guardian"
-    )
+    await marketplace.charge(tenant_id, "agent_guardian", 10.0, "llm_call", agent_type="guardian")
+    await marketplace.charge(tenant_id, "agent_guardian", 5.0, "compute", agent_type="guardian")
 
-    await marketplace.charge(
-        tenant_id, "agent_archivist", 200.0, "storage", agent_type="archivist"
-    )
+    await marketplace.charge(tenant_id, "agent_archivist", 200.0, "storage", agent_type="archivist")
     await marketplace.reward(
         tenant_id, "agent_archivist", 50.0, "quality_bonus", agent_type="archivist"
     )

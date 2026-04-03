@@ -60,9 +60,7 @@ def event_bus():
 @pytest.fixture
 def mission_executor(marketplace, event_bus, llm_service):
     """Create mission executor for testing"""
-    return MissionExecutor(
-        marketplace=marketplace, event_bus=event_bus, llm_service=llm_service
-    )
+    return MissionExecutor(marketplace=marketplace, event_bus=event_bus, llm_service=llm_service)
 
 
 # ============================================================================
@@ -304,9 +302,7 @@ class TestMissionExecutorIntegration:
         assert mission_executor.agent_factory is not None
         assert isinstance(mission_executor.agent_factory, AgentFactory)
 
-    async def test_mission_executor_research_mission(
-        self, mission_executor, marketplace
-    ):
+    async def test_mission_executor_research_mission(self, mission_executor, marketplace):
         """Test MissionExecutor executes research mission with ResearcherAgent"""
         mission_id = f"mission_test_{uuid.uuid4().hex[:8]}"
         tenant_id = "test_tenant"
@@ -343,9 +339,7 @@ class TestMissionExecutorIntegration:
         except Exception as e:
             pytest.skip(f"Mission execution failed (expected in CI without LLM): {e}")
 
-    async def test_mission_executor_analysis_mission(
-        self, mission_executor, marketplace
-    ):
+    async def test_mission_executor_analysis_mission(self, mission_executor, marketplace):
         """Test MissionExecutor executes analysis mission with AnalystAgent"""
         mission_id = f"mission_test_{uuid.uuid4().hex[:8]}"
         tenant_id = "test_tenant"
@@ -378,9 +372,7 @@ class TestMissionExecutorIntegration:
         except Exception as e:
             pytest.skip(f"Mission execution failed (expected in CI without LLM): {e}")
 
-    async def test_mission_executor_development_mission(
-        self, mission_executor, marketplace
-    ):
+    async def test_mission_executor_development_mission(self, mission_executor, marketplace):
         """Test MissionExecutor executes development mission with DeveloperAgent"""
         mission_id = f"mission_test_{uuid.uuid4().hex[:8]}"
         tenant_id = "test_tenant"
@@ -413,9 +405,7 @@ class TestMissionExecutorIntegration:
         except Exception as e:
             pytest.skip(f"Mission execution failed (expected in CI without LLM): {e}")
 
-    async def test_mission_executor_simple_fallback(
-        self, mission_executor, marketplace
-    ):
+    async def test_mission_executor_simple_fallback(self, mission_executor, marketplace):
         """Test MissionExecutor falls back to simple execution for basic tasks"""
         mission_id = f"mission_test_{uuid.uuid4().hex[:8]}"
         tenant_id = "test_tenant"

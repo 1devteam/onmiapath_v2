@@ -204,9 +204,7 @@ class TestSchedulerService:
         """Zero interval raises ValueError."""
         from backend.core.scheduler.scheduler_service import SchedulerService
 
-        with pytest.raises(
-            ValueError, match="interval_seconds must be a positive integer"
-        ):
+        with pytest.raises(ValueError, match="interval_seconds must be a positive integer"):
             SchedulerService._validate_trigger("interval", None, 0)
 
     def test_validate_trigger_invalid_type(self):
@@ -307,9 +305,7 @@ class TestRedditTool:
         )
         with patch("praw.Reddit") as mock_reddit:
             mock_reddit.return_value = MagicMock()
-            result = await tool._arun(
-                json.dumps({"action": "fly", "subreddit": "python"})
-            )
+            result = await tool._arun(json.dumps({"action": "fly", "subreddit": "python"}))
         assert "Error" in result
         assert "Unknown action" in result
 
@@ -463,9 +459,7 @@ class TestMigrationStructure:
 
         dropped_tables = []
         mock_op = MagicMock()
-        mock_op.drop_table = MagicMock(
-            side_effect=lambda name: dropped_tables.append(name)
-        )
+        mock_op.drop_table = MagicMock(side_effect=lambda name: dropped_tables.append(name))
         mod.op = mock_op
         mod.downgrade()
 

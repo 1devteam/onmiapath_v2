@@ -70,29 +70,19 @@ class LLMFactory:
             model = LLMFactory.DEFAULT_MODELS.get(provider)
 
         if provider == LLMProvider.OPENAI:
-            return LLMFactory._create_openai(
-                model, temperature, max_tokens, api_key, **kwargs
-            )
+            return LLMFactory._create_openai(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.ANTHROPIC:
-            return LLMFactory._create_anthropic(
-                model, temperature, max_tokens, api_key, **kwargs
-            )
+            return LLMFactory._create_anthropic(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.GOOGLE:
-            return LLMFactory._create_google(
-                model, temperature, max_tokens, api_key, **kwargs
-            )
+            return LLMFactory._create_google(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.XAI:
-            return LLMFactory._create_xai(
-                model, temperature, max_tokens, api_key, **kwargs
-            )
+            return LLMFactory._create_xai(model, temperature, max_tokens, api_key, **kwargs)
 
         elif provider == LLMProvider.OLLAMA:
-            return LLMFactory._create_ollama(
-                model, temperature, max_tokens, base_url, **kwargs
-            )
+            return LLMFactory._create_ollama(model, temperature, max_tokens, base_url, **kwargs)
 
         else:
             raise ValueError(f"Unsupported provider: {provider}")
@@ -110,9 +100,7 @@ class LLMFactory:
         import os
 
         # Use Manus LLM Proxy if in sandbox environment
-        base_url = os.environ.get(
-            "OPENAI_API_BASE", "https://api.manus.im/api/llm-proxy/v1"
-        )
+        base_url = os.environ.get("OPENAI_API_BASE", "https://api.manus.im/api/llm-proxy/v1")
 
         return ChatOpenAI(
             model=model,

@@ -283,9 +283,7 @@ class TestSagaOrchestrator:
         async def step_b(ctx):
             raise ValueError("step_b failed")
 
-        self.orchestrator.add_step(
-            saga, "step_a", action=step_a, compensation=compensate_a
-        )
+        self.orchestrator.add_step(saga, "step_a", action=step_a, compensation=compensate_a)
         self.orchestrator.add_step(saga, "step_b", action=step_b)
 
         await self.orchestrator.execute(saga)

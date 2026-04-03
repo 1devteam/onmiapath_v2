@@ -32,9 +32,7 @@ class CommanderAgentV3(BaseAgent):
         mission_payload: Dict[str, Any],
         configuration: Dict[str, Any] = None,
     ):
-        super().__init__(
-            agent_id, agent_name, tenant_id, mission_payload, configuration
-        )
+        super().__init__(agent_id, agent_name, tenant_id, mission_payload, configuration)
 
         # State for personal build
         self.emotion = "neutral"

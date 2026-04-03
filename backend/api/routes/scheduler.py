@@ -39,9 +39,7 @@ router = APIRouter(prefix="/api/v1/scheduler", tags=["scheduler"])
 class CreateJobRequest(BaseModel):
     """Request body for creating a new scheduled job."""
 
-    name: str = Field(
-        ..., min_length=1, max_length=255, description="Human-readable job name"
-    )
+    name: str = Field(..., min_length=1, max_length=255, description="Human-readable job name")
     description: Optional[str] = Field(None, description="Optional description")
     agent_id: str = Field(..., description="Agent that will execute the missions")
     trigger_type: str = Field(..., description="'cron' or 'interval'")
@@ -292,9 +290,7 @@ async def update_job(
         if len(updates) > 1:  # More than just updated_at
             async with scheduler._session_factory() as session:
                 await session.execute(
-                    sa_update(ScheduledJob)
-                    .where(ScheduledJob.id == job_id)
-                    .values(**updates)
+                    sa_update(ScheduledJob).where(ScheduledJob.id == job_id).values(**updates)
                 )
                 await session.commit()
 

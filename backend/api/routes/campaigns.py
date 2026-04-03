@@ -230,9 +230,7 @@ async def create_campaign(
         user_id=user_id,
     )
 
-    logger.info(
-        f"Campaign created: {campaign_id} ({body.platform}, {body.total_posts} posts)"
-    )
+    logger.info(f"Campaign created: {campaign_id} ({body.platform}, {body.total_posts} posts)")
 
     return CampaignResponse(
         **{k: v for k, v in campaign.items() if k in CampaignResponse.model_fields}
@@ -245,13 +243,9 @@ async def list_campaigns(
     tenant_id: str = Depends(_get_tenant_id),
 ) -> List[CampaignResponse]:
     """List all campaigns for the current tenant."""
-    tenant_campaigns = [
-        c for c in _campaigns.values() if c.get("tenant_id") == tenant_id
-    ]
+    tenant_campaigns = [c for c in _campaigns.values() if c.get("tenant_id") == tenant_id]
     return [
-        CampaignResponse(
-            **{k: v for k, v in c.items() if k in CampaignResponse.model_fields}
-        )
+        CampaignResponse(**{k: v for k, v in c.items() if k in CampaignResponse.model_fields})
         for c in tenant_campaigns
     ]
 

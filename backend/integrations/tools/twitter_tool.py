@@ -189,9 +189,7 @@ class TwitterTool(BaseTool):
             "text": text,
         }
 
-    async def _post_thread(
-        self, client: Any, texts: Optional[List[str]]
-    ) -> Dict[str, Any]:
+    async def _post_thread(self, client: Any, texts: Optional[List[str]]) -> Dict[str, Any]:
         """Post a thread of connected tweets."""
         if not texts or len(texts) == 0:
             return {
@@ -227,15 +225,11 @@ class TwitterTool(BaseTool):
             "tweet_ids": tweet_ids,
             "count": len(tweet_ids),
             "first_url": (
-                f"https://twitter.com/i/web/status/{tweet_ids[0]}"
-                if tweet_ids
-                else None
+                f"https://twitter.com/i/web/status/{tweet_ids[0]}" if tweet_ids else None
             ),
         }
 
-    async def _get_metrics(
-        self, client: Any, tweet_id: Optional[str]
-    ) -> Dict[str, Any]:
+    async def _get_metrics(self, client: Any, tweet_id: Optional[str]) -> Dict[str, Any]:
         """Get engagement metrics for a tweet."""
         if not tweet_id:
             return {

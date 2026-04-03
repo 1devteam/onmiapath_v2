@@ -72,9 +72,7 @@ class TestAssemblePrompt:
     def test_empty_string_user_prompt_returns_preamble_only(self):
         """An empty string user prompt should behave the same as None."""
         result = assemble_prompt("")
-        assert (
-            result == PRIDE_PREAMBLE
-        ), "An empty user prompt must result in the preamble only."
+        assert result == PRIDE_PREAMBLE, "An empty user prompt must result in the preamble only."
 
     def test_whitespace_only_user_prompt_returns_preamble_only(self):
         """A whitespace-only user prompt should be treated as absent."""
@@ -185,9 +183,7 @@ class TestGetPreambleVersion:
 class TestPolicyManagerImmutability:
     """Tests for immutability enforcement in PolicyManager."""
 
-    def _make_immutable_policy(
-        self, policy_id: str = "test.immutable.policy"
-    ) -> Policy:
+    def _make_immutable_policy(self, policy_id: str = "test.immutable.policy") -> Policy:
         """Helper: create an immutable policy for testing."""
         return Policy(
             policy_id=policy_id,
@@ -267,12 +263,8 @@ class TestPolicyManagerImmutability:
         policy = self._make_mutable_policy()
         manager.create_policy(policy)
 
-        updated = manager.update_policy(
-            policy.policy_id, "test_user", name="Updated Name"
-        )
-        assert (
-            updated.name == "Updated Name"
-        ), "Mutable policies must be updatable without error."
+        updated = manager.update_policy(policy.policy_id, "test_user", name="Updated Name")
+        assert updated.name == "Updated Name", "Mutable policies must be updatable without error."
 
     def test_mutable_policy_can_be_deleted(self):
         """delete_policy() must succeed for mutable policies."""
@@ -281,9 +273,7 @@ class TestPolicyManagerImmutability:
         manager.create_policy(policy)
 
         manager.delete_policy(policy.policy_id, "test_user")
-        assert (
-            manager.get_policy(policy.policy_id) is None
-        ), "Mutable policies must be deletable."
+        assert manager.get_policy(policy.policy_id) is None, "Mutable policies must be deletable."
 
     def test_immutable_policy_remains_after_failed_delete(self):
         """After a failed delete attempt, the policy must still be present."""

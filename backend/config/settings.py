@@ -16,9 +16,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Omnipath"
     APP_VERSION: str = "3.0.0"
     DEBUG: bool = False
-    ENVIRONMENT: str = Field(
-        default="development", pattern="^(development|staging|production)$"
-    )
+    ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production)$")
 
     # LLM Provider Configuration
     # API Keys

@@ -157,9 +157,7 @@ Respond with ONLY valid JSON in this exact format:
             LeadGenerationResult with qualified leads and workflow metadata.
         """
         steps: List[str] = []
-        logger.info(
-            f"LeadGenerationWorkflow: starting — query='{query}', max_leads={max_leads}"
-        )
+        logger.info(f"LeadGenerationWorkflow: starting — query='{query}', max_leads={max_leads}")
 
         # Step 1: Search
         steps.append("web_search")
@@ -249,9 +247,7 @@ Respond with ONLY valid JSON in this exact format:
             data = json.loads(raw) if isinstance(raw, str) else raw
             result["enriched_text"] = data.get("text", "")[:3_000]
         except Exception as exc:
-            logger.warning(
-                f"LeadGenerationWorkflow: enrichment failed for {url}: {exc}"
-            )
+            logger.warning(f"LeadGenerationWorkflow: enrichment failed for {url}: {exc}")
 
         return result
 
@@ -293,9 +289,7 @@ Respond with ONLY valid JSON in this exact format:
         try:
             llm = self._llm.get_llm("worker", self._tenant_id)
             response = await llm.ainvoke(prompt)
-            content = (
-                response.content if hasattr(response, "content") else str(response)
-            )
+            content = response.content if hasattr(response, "content") else str(response)
 
             # Parse JSON response
             parsed = json.loads(content.strip())
@@ -307,9 +301,7 @@ Respond with ONLY valid JSON in this exact format:
             lead.score = 0.3
             lead.reasoning = "Could not parse LLM qualification response."
         except Exception as exc:
-            logger.warning(
-                f"LeadGenerationWorkflow: qualification failed for {name}: {exc}"
-            )
+            logger.warning(f"LeadGenerationWorkflow: qualification failed for {name}: {exc}")
             lead.score = 0.0
             lead.reasoning = f"Qualification error: {exc}"
 

@@ -118,9 +118,7 @@ class ResourceMarketplace:
 
     async def add_tenant_credits(self, tenant_id: str, amount: float):
         """Always approves adding tenant credits."""
-        logger.info(
-            f"Adding {amount} credits to tenant {tenant_id} approved (personal build)."
-        )
+        logger.info(f"Adding {amount} credits to tenant {tenant_id} approved (personal build).")
 
     async def get_tenant_total_balance(self, tenant_id: str) -> float:
         """Always returns a very large total balance."""

@@ -76,9 +76,7 @@ async def get_agent_balances(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/balance/{agent_id}", response_model=AgentBalance)
-async def get_agent_balance(
-    agent_id: str, current_user: User = Depends(get_current_user)
-):
+async def get_agent_balance(agent_id: str, current_user: User = Depends(get_current_user)):
     """Get credit balance for a specific agent"""
     balance = await marketplace.get_balance(current_user.tenant_id, agent_id)
 
@@ -160,7 +158,5 @@ async def top_up_credits(
 
     return {
         "message": f"Added {amount} credits to tenant {current_user.tenant_id}",
-        "new_balance": await marketplace.get_tenant_total_balance(
-            current_user.tenant_id
-        ),
+        "new_balance": await marketplace.get_tenant_total_balance(current_user.tenant_id),
     }

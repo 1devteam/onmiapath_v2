@@ -68,9 +68,7 @@ class MissionExecutor:
         self, tenant_id: str, limit: int = 50, offset: int = 0
     ) -> List[dict]:
         """List all missions for a tenant from Redis."""
-        mission_ids = await self._redis.smembers(
-            self._get_tenant_missions_key(tenant_id)
-        )
+        mission_ids = await self._redis.smembers(self._get_tenant_missions_key(tenant_id))
 
         missions = []
         for mid in list(mission_ids)[offset : offset + limit]:
@@ -117,18 +115,14 @@ class MissionExecutor:
                 f"Create a 3-step plan for: {goal}. Respond with only the steps, one per line."
             )
             steps = [s.strip() for s in plan_response.content.split("\n") if s.strip()]
-            mission_state.update(
-                {"steps": steps, "status": MissionStatus.PLANNING.value}
-            )
+            mission_state.update({"steps": steps, "status": MissionStatus.PLANNING.value})
             await self._save_mission_state(mission_id, mission_state)
 
             # Phase 2: Execution
             outputs = []
             total_cost = 0.0
             for i, step in enumerate(steps):
-                logger.info(
-                    f"Executing step {i+1}/{len(steps)} for mission {mission_id}: {step}"
-                )
+                logger.info(f"Executing step {i+1}/{len(steps)} for mission {mission_id}: {step}")
 
                 # Charge for the step
                 logger.info(f"Charging for step {i+1}...")
@@ -169,8 +163,6 @@ class MissionExecutor:
 
         except Exception as e:
             logger.error(f"Mission {mission_id} failed: {str(e)}", exc_info=True)
-            mission_state.update(
-                {"status": MissionStatus.FAILED.value, "error": str(e)}
-            )
+            mission_state.update({"status": MissionStatus.FAILED.value, "error": str(e)})
             await self._save_mission_state(mission_id, mission_state)
             return mission_state

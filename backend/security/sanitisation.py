@@ -45,9 +45,7 @@ _JAVASCRIPT_PROTOCOL_PATTERN = re.compile(
 )
 
 
-def sanitise_string(
-    value: str, *, max_length: int = 10_000, allow_html: bool = False
-) -> str:
+def sanitise_string(value: str, *, max_length: int = 10_000, allow_html: bool = False) -> str:
     """
     Sanitise a user-supplied string.
 
@@ -145,16 +143,12 @@ def sanitise_dict(
         New dictionary with all string values sanitised.
     """
     if depth > max_depth:
-        logger.warning(
-            "sanitise_dict: max recursion depth reached, truncating nested object"
-        )
+        logger.warning("sanitise_dict: max recursion depth reached, truncating nested object")
         return {}
 
     result: Dict[str, Any] = {}
     for key, value in data.items():
-        sanitised_key = (
-            sanitise_string(str(key), max_length=256) if isinstance(key, str) else key
-        )
+        sanitised_key = sanitise_string(str(key), max_length=256) if isinstance(key, str) else key
         if isinstance(value, str):
             result[sanitised_key] = sanitise_string(
                 value, max_length=max_string_length, allow_html=allow_html
@@ -197,9 +191,7 @@ def _sanitise_list(
     for item in data:
         if isinstance(item, str):
             result.append(
-                sanitise_string(
-                    item, max_length=max_string_length, allow_html=allow_html
-                )
+                sanitise_string(item, max_length=max_string_length, allow_html=allow_html)
             )
         elif isinstance(item, dict):
             result.append(

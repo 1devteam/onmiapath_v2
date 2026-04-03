@@ -204,9 +204,7 @@ class TestEventStoreAppend:
         store = EventStore(session_factory=_mock_factory)
 
         # Patch the static _get_current_version to avoid a real DB call
-        with patch.object(
-            EventStore, "_get_current_version", new=AsyncMock(return_value=0)
-        ):
+        with patch.object(EventStore, "_get_current_version", new=AsyncMock(return_value=0)):
             await store.append(
                 aggregate_id="agent_001",
                 aggregate_type="Agent",
@@ -241,9 +239,7 @@ class TestEventStoreAppend:
 
         store = EventStore(session_factory=_mock_factory)
 
-        with patch.object(
-            EventStore, "_get_current_version", new=AsyncMock(return_value=2)
-        ):
+        with patch.object(EventStore, "_get_current_version", new=AsyncMock(return_value=2)):
             with pytest.raises(ConcurrencyError):
                 await store.append(
                     aggregate_id="agent_001",
@@ -324,9 +320,7 @@ class TestCommandClasses:
         """Test AdjustCreditCommand creation with actual signature"""
         from backend.core.cqrs.cqrs_impl import AdjustCreditCommand
 
-        cmd = AdjustCreditCommand(
-            agent_id="agent_001", amount=10.0, reason="mission_reward"
-        )
+        cmd = AdjustCreditCommand(agent_id="agent_001", amount=10.0, reason="mission_reward")
         assert cmd.agent_id == "agent_001"
         assert cmd.amount == 10.0
         assert cmd.reason == "mission_reward"
@@ -519,9 +513,7 @@ class TestSagaOrchestrator:
         async def comp_fn(ctx):
             return ctx
 
-        step = orchestrator.add_step(
-            saga=saga, name="step_1", action=step_fn, compensation=comp_fn
-        )
+        step = orchestrator.add_step(saga=saga, name="step_1", action=step_fn, compensation=comp_fn)
         assert len(saga.steps) == 1
         assert saga.steps[0].name == "step_1"
         assert step.step_id is not None

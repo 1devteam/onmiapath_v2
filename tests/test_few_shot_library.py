@@ -453,9 +453,7 @@ class TestAssemblePromptIntegration:
         ):
             FewShotLibrary.reset_instance()
             # Should not raise — should degrade gracefully
-            result = assemble_prompt(
-                "You are an analyst.", scenario="lead_qualification"
-            )
+            result = assemble_prompt("You are an analyst.", scenario="lead_qualification")
             assert "CITADEL GOVERNANCE" in result
             assert "You are an analyst." in result
             assert "PROPER ACTION" not in result

@@ -209,9 +209,7 @@ async def update_policy(
     if request.description is not None:
         updates["description"] = request.description
     if request.conditions is not None:
-        updates["conditions"] = [
-            _convert_condition_request(c) for c in request.conditions
-        ]
+        updates["conditions"] = [_convert_condition_request(c) for c in request.conditions]
     if request.actions is not None:
         updates["actions"] = [_convert_action_request(a) for a in request.actions]
     if request.applies_to is not None:
@@ -364,9 +362,7 @@ async def evaluate_policies(request: EvaluationContextRequest) -> Dict[str, Any]
     # Get asset
     asset = registry.get(request.asset_id)
     if not asset:
-        raise HTTPException(
-            status_code=404, detail=f"Asset {request.asset_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Asset {request.asset_id} not found")
 
     # Create evaluation context
     context = EvaluationContext(
@@ -421,9 +417,7 @@ async def test_policy(
     # Get asset
     asset = registry.get(context.asset_id)
     if not asset:
-        raise HTTPException(
-            status_code=404, detail=f"Asset {context.asset_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Asset {context.asset_id} not found")
 
     # Create evaluation context
     eval_context = EvaluationContext(
@@ -480,9 +474,7 @@ async def get_policy_stats() -> Dict[str, Any]:
     stats["total_enforcements"] = sum(p.enforcement_count for p in all_policies)
 
     # Most enforced policies
-    sorted_policies = sorted(
-        all_policies, key=lambda p: p.enforcement_count, reverse=True
-    )
+    sorted_policies = sorted(all_policies, key=lambda p: p.enforcement_count, reverse=True)
     stats["most_enforced"] = [
         {
             "policy_id": p.policy_id,
@@ -529,18 +521,10 @@ async def detect_policy_conflicts() -> Dict[str, Any]:
             # Check if they apply to same asset types
             if policy1.applies_to == policy2.applies_to:
                 # Check if they have conflicting actions
-                has_deny_1 = any(
-                    a.action_type == ActionType.DENY for a in policy1.actions
-                )
-                has_allow_1 = any(
-                    a.action_type == ActionType.ALLOW for a in policy1.actions
-                )
-                has_deny_2 = any(
-                    a.action_type == ActionType.DENY for a in policy2.actions
-                )
-                has_allow_2 = any(
-                    a.action_type == ActionType.ALLOW for a in policy2.actions
-                )
+                has_deny_1 = any(a.action_type == ActionType.DENY for a in policy1.actions)
+                has_allow_1 = any(a.action_type == ActionType.ALLOW for a in policy1.actions)
+                has_deny_2 = any(a.action_type == ActionType.DENY for a in policy2.actions)
+                has_allow_2 = any(a.action_type == ActionType.ALLOW for a in policy2.actions)
 
                 if (has_deny_1 and has_allow_2) or (has_allow_1 and has_deny_2):
                     conflicts.append(

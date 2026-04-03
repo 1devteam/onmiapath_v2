@@ -424,9 +424,7 @@ class SchedulerService(LoggerMixin):
 
             # Enforce max_runs cap
             if job.max_runs is not None and job.run_count >= job.max_runs:
-                self.log_info(
-                    f"Job {job_id} has reached max_runs={job.max_runs}; pausing"
-                )
+                self.log_info(f"Job {job_id} has reached max_runs={job.max_runs}; pausing")
                 job.is_active = False
                 await session.commit()
                 if self._scheduler.get_job(job_id):

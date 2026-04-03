@@ -52,16 +52,11 @@ REQUEST_TIMEOUT = 15.0
 # Falls back to httpx default (certifi) if the system bundle is not present.
 _SYSTEM_CA_BUNDLE = "/etc/ssl/certs/ca-certificates.crt"
 _SSL_VERIFY: object = (
-    _SYSTEM_CA_BUNDLE
-    if os.path.exists(_SYSTEM_CA_BUNDLE)
-    else True  # httpx default (certifi)
+    _SYSTEM_CA_BUNDLE if os.path.exists(_SYSTEM_CA_BUNDLE) else True  # httpx default (certifi)
 )
 
 # User-Agent string — identifies the agent to servers
-USER_AGENT = (
-    "OmnipathAgent/2.0 (Citadel AI Research Agent; "
-    "+https://nested-ai.net/agent-info)"
-)
+USER_AGENT = "OmnipathAgent/2.0 (Citadel AI Research Agent; " "+https://nested-ai.net/agent-info)"
 
 # HTML tags whose content is always stripped entirely (not just the tag)
 STRIP_TAGS = {
@@ -328,8 +323,7 @@ class WebPageReaderTool(BaseTool):
             return {
                 "success": False,
                 "error": (
-                    f"Access denied: '{hostname}' resolves to a private or "
-                    "reserved IP address."
+                    f"Access denied: '{hostname}' resolves to a private or " "reserved IP address."
                 ),
                 "url": url,
             }
@@ -364,9 +358,7 @@ class WebPageReaderTool(BaseTool):
                 }
 
             # --- Content-type check ---
-            content_type = (
-                response.headers.get("content-type", "").lower().split(";")[0].strip()
-            )
+            content_type = response.headers.get("content-type", "").lower().split(";")[0].strip()
             if content_type and content_type not in ACCEPTABLE_CONTENT_TYPES:
                 return {
                     "success": False,

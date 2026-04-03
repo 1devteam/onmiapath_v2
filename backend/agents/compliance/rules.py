@@ -567,9 +567,7 @@ class TenantIsolationRule:
         if "tenant_id" in query:
             # Simple check - in production, parse SQL properly
             if agent_tenant not in query:
-                return ComplianceResult.block(
-                    rule=self.name, reason="Cross-tenant query detected"
-                )
+                return ComplianceResult.block(rule=self.name, reason="Cross-tenant query detected")
 
         return ComplianceResult.allow(self.name)
 

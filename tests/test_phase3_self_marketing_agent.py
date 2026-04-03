@@ -365,9 +365,7 @@ class TestLeadGenerationWorkflow:
         result = LeadGenerationResult(
             query="test query",
             criteria="test criteria",
-            leads=[
-                Lead(name="Test Co", url="https://test.com", snippet="Test", score=0.7)
-            ],
+            leads=[Lead(name="Test Co", url="https://test.com", snippet="Test", score=0.7)],
             total_found=1,
             total_qualified=1,
             workflow_steps=["web_search", "llm_qualify"],
@@ -430,9 +428,7 @@ class TestSocialMediaPostingSaga:
         from backend.core.saga.saga_orchestrator import SocialMediaPostingSaga
 
         orchestrator, event_store = self._make_orchestrator()
-        executor = self._make_mission_executor(
-            "Citadel AI is transforming retail security."
-        )
+        executor = self._make_mission_executor("Citadel AI is transforming retail security.")
         bridge = self._make_tool_bridge(has_tool=False)  # No real tool — simulation
 
         saga = SocialMediaPostingSaga(

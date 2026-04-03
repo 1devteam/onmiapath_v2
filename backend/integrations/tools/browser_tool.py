@@ -142,9 +142,7 @@ class PlaywrightBrowserTool(BaseTool):
                     page = await browser.new_page()
                     page.set_default_timeout(self._timeout_ms)
 
-                    result = await self._dispatch(
-                        page, action, url, selector, text, wait_for
-                    )
+                    result = await self._dispatch(page, action, url, selector, text, wait_for)
                 finally:
                     await browser.close()
 
@@ -185,9 +183,7 @@ class PlaywrightBrowserTool(BaseTool):
                 "error": f"Unknown action '{action}'. Valid: {list(handlers.keys())}",
             }
 
-        return await handler(
-            page, url=url, selector=selector, text=text, wait_for=wait_for
-        )
+        return await handler(page, url=url, selector=selector, text=text, wait_for=wait_for)
 
     async def _navigate(
         self, page: Any, url: Optional[str] = None, **kwargs: Any
