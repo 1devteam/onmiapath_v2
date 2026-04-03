@@ -3,16 +3,18 @@ Agent Economy API Routes
 Monitor credits, transactions, and resource usage
 """
 
+import logging
+from datetime import datetime
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
 
-from backend.security.auth_utils import get_current_user, User
 from backend.economy.resource_marketplace import ResourceMarketplace
-
+from backend.security.auth_utils import User, get_current_user
 
 router = APIRouter(prefix="/api/v1/economy", tags=["economy"])
+logger = logging.getLogger(__name__)
 
 marketplace = ResourceMarketplace()
 
@@ -22,31 +24,34 @@ def _normalize_balance_payload(agent_id: str, raw_balance) -> dict:
     Normalize marketplace balance payloads.
 
     Supports both structured dict payloads and legacy float balances.
+    Enforces the provided agent_id as the canonical identifier.
     """
     if isinstance(raw_balance, dict):
-        required_financial_fields = {"balance", "total_earned", "total_spent"}
-        missing_fields = sorted(
-            field for field in required_financial_fields if field not in raw_balance
-        )
-        if missing_fields:
+        # Strict validation for structured dicts
+        required_keys = ["balance", "total_earned", "total_spent"]
+        missing_keys = [k for k in required_keys if k not in raw_balance]
+
+        if missing_keys:
+            logger.error(f"Incomplete balance dict for agent {agent_id}: missing {missing_keys}")
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "Invalid marketplace balance payload: "
-                    f"missing required field(s): {', '.join(missing_fields)}"
+                    f"Invalid marketplace balance payload for agent {agent_id}: "
+                    f"missing required field(s): {', '.join(missing_keys)}"
                 ),
             )
 
         return {
-            "agent_id": raw_balance.get("agent_id", agent_id),
+            "agent_id": agent_id,  # Use map key as canonical ID
             "type": raw_balance.get("type", raw_balance.get("agent_type", "unknown")),
-            "balance": raw_balance["balance"],
-            "total_earned": raw_balance["total_earned"],
-            "total_spent": raw_balance["total_spent"],
+            "balance": float(raw_balance["balance"]),
+            "total_earned": float(raw_balance["total_earned"]),
+            "total_spent": float(raw_balance["total_spent"]),
             "last_updated": raw_balance.get("last_updated", datetime.utcnow()),
         }
 
     if isinstance(raw_balance, (int, float)):
+        # Legacy support for float-only responses
         return {
             "agent_id": agent_id,
             "type": "unknown",
