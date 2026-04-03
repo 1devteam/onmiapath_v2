@@ -22,18 +22,35 @@ def _normalize_balance_payload(agent_id: str, raw_balance) -> dict:
     Normalize marketplace balance payloads.
 
     Supports both structured dict payloads and legacy float balances.
+    Enforces the provided agent_id as the canonical identifier.
     """
     if isinstance(raw_balance, dict):
+        # Strict validation for structured dicts
+        required_keys = ["balance", "total_earned", "total_spent"]
+        missing_keys = [k for k in required_keys if k not in raw_balance]
+
+        if missing_keys:
+            logger_name = "backend.api.routes.economy"
+            import logging
+
+            logging.getLogger(logger_name).error(
+                f"Incomplete balance dict for agent {agent_id}: missing {missing_keys}"
+            )
+            raise HTTPException(
+                status_code=500, detail=f"Incomplete balance data for agent {agent_id}"
+            )
+
         return {
-            "agent_id": raw_balance.get("agent_id", agent_id),
+            "agent_id": agent_id,  # Use map key as canonical ID
             "type": raw_balance.get("type", raw_balance.get("agent_type", "unknown")),
-            "balance": raw_balance.get("balance", 0.0),
-            "total_earned": raw_balance.get("total_earned", 0.0),
-            "total_spent": raw_balance.get("total_spent", 0.0),
+            "balance": float(raw_balance["balance"]),
+            "total_earned": float(raw_balance["total_earned"]),
+            "total_spent": float(raw_balance["total_spent"]),
             "last_updated": raw_balance.get("last_updated", datetime.utcnow()),
         }
 
     if isinstance(raw_balance, (int, float)):
+        # Legacy support for float-only responses
         return {
             "agent_id": agent_id,
             "type": "unknown",
