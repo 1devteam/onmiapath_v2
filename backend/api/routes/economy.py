@@ -3,16 +3,18 @@ Agent Economy API Routes
 Monitor credits, transactions, and resource usage
 """
 
+import logging
+from datetime import datetime
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
 
-from backend.security.auth_utils import get_current_user, User
 from backend.economy.resource_marketplace import ResourceMarketplace
-
+from backend.security.auth_utils import User, get_current_user
 
 router = APIRouter(prefix="/api/v1/economy", tags=["economy"])
+logger = logging.getLogger(__name__)
 
 marketplace = ResourceMarketplace()
 
@@ -30,14 +32,13 @@ def _normalize_balance_payload(agent_id: str, raw_balance) -> dict:
         missing_keys = [k for k in required_keys if k not in raw_balance]
 
         if missing_keys:
-            logger_name = "backend.api.routes.economy"
-            import logging
-
-            logging.getLogger(logger_name).error(
-                f"Incomplete balance dict for agent {agent_id}: missing {missing_keys}"
-            )
+            logger.error(f"Incomplete balance dict for agent {agent_id}: missing {missing_keys}")
             raise HTTPException(
-                status_code=500, detail=f"Incomplete balance data for agent {agent_id}"
+                status_code=500,
+                detail=(
+                    f"Invalid marketplace balance payload for agent {agent_id}: "
+                    f"missing required field(s): {', '.join(missing_keys)}"
+                ),
             )
 
         return {

@@ -9,9 +9,9 @@ from backend.security.auth_utils import (
     get_password_hash,
     create_user_in_db,
     get_user_from_db,
-    UserCreate,
     User,
 )
+from backend.models.domain.user import UserCreate
 from datetime import timedelta
 
 AUTH_ROUTER_PREFIX = "/api/v1/auth"
