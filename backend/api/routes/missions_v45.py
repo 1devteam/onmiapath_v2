@@ -6,6 +6,7 @@ from datetime import datetime
 from backend.security.auth_utils import get_current_user
 from backend.orchestration.mission_executor import MissionExecutor
 from backend.economy.resource_marketplace import ResourceMarketplace
+
 # from backend.core.event_bus.nats_bus import NATSEventBus # Removed for simplification
 from backend.integrations.llm.llm_factory import LLMFactory
 from backend.models.domain.user import User
@@ -29,6 +30,7 @@ def get_mission_executor() -> MissionExecutor:
 
 class CreateMissionRequest(BaseModel):
     """Request to create a new mission"""
+
     name: str = Field(..., description="Human-readable mission name")
     goal: str = Field(..., description="Mission objective in natural language")
     budget: Optional[float] = Field(None, description="Budget limit in credits")
@@ -37,6 +39,7 @@ class CreateMissionRequest(BaseModel):
 
 class MissionResponse(BaseModel):
     """Mission execution response"""
+
     mission_id: str
     status: str
     message: Optional[str] = None
@@ -52,11 +55,11 @@ async def create_mission(
     request: CreateMissionRequest,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
-    executor: MissionExecutor = Depends(get_mission_executor)
+    executor: MissionExecutor = Depends(get_mission_executor),
 ):
     """
     Create and execute a new mission
-    
+
     This endpoint:
     1. Validates the mission with Guardian
     2. Creates an execution plan with Commander
@@ -65,9 +68,9 @@ async def create_mission(
     5. Distributes rewards through the Agent Economy
     """
     import uuid
-    
+
     mission_id = str(uuid.uuid4())
-    
+
     # Execute mission in background
     background_tasks.add_task(
         executor.execute_mission,
@@ -76,9 +79,9 @@ async def create_mission(
         tenant_id=current_user.tenant_id,
         user_id=current_user.id,
         budget=request.budget,
-        name=request.name
+        name=request.name,
     )
-    
+
     return MissionResponse(
         mission_id=mission_id,
         status="accepted",
@@ -86,7 +89,7 @@ async def create_mission(
         output=None,
         cost=0.0,
         duration_seconds=None,
-        agents_used=[]
+        agents_used=[],
     )
 
 
@@ -94,14 +97,14 @@ async def create_mission(
 async def get_mission(
     mission_id: str,
     current_user: User = Depends(get_current_user),
-    executor: MissionExecutor = Depends(get_mission_executor)
+    executor: MissionExecutor = Depends(get_mission_executor),
 ):
     """Get mission status and results from Redis."""
     result = await executor.get_mission_state(mission_id)
-    
+
     if not result or result.get("tenant_id") != current_user.tenant_id:
         raise HTTPException(status_code=404, detail="Mission not found")
-    
+
     return MissionResponse(
         mission_id=mission_id,
         status=result["status"],
@@ -110,7 +113,7 @@ async def get_mission(
         cost=result.get("cost"),
         duration_seconds=result.get("duration_seconds"),
         agents_used=result.get("agents_used"),
-        created_at=result.get("created_at")
+        created_at=result.get("created_at"),
     )
 
 
@@ -119,15 +122,13 @@ async def list_missions(
     limit: int = 50,
     offset: int = 0,
     current_user: User = Depends(get_current_user),
-    executor: MissionExecutor = Depends(get_mission_executor)
+    executor: MissionExecutor = Depends(get_mission_executor),
 ):
     """List all missions for the current tenant from Redis."""
     missions = await executor.list_tenant_missions(
-        tenant_id=current_user.tenant_id,
-        limit=limit,
-        offset=offset
+        tenant_id=current_user.tenant_id, limit=limit, offset=offset
     )
-    
+
     return [
         MissionResponse(
             mission_id=m["mission_id"],
@@ -137,7 +138,7 @@ async def list_missions(
             cost=m.get("cost"),
             duration_seconds=m.get("duration_seconds"),
             agents_used=m.get("agents_used"),
-            created_at=m.get("created_at")
+            created_at=m.get("created_at"),
         )
         for m in missions
     ]

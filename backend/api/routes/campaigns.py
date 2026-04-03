@@ -148,6 +148,7 @@ def _get_mission_executor(request: Request) -> Any:
 def _get_tool_bridge(request: Request) -> Any:
     """Get the MCPToolBridge from app.state."""
     from backend.integrations.mcp.tool_bridge import get_mcp_tool_bridge
+
     return get_mcp_tool_bridge()
 
 
@@ -229,9 +230,13 @@ async def create_campaign(
         user_id=user_id,
     )
 
-    logger.info(f"Campaign created: {campaign_id} ({body.platform}, {body.total_posts} posts)")
+    logger.info(
+        f"Campaign created: {campaign_id} ({body.platform}, {body.total_posts} posts)"
+    )
 
-    return CampaignResponse(**{k: v for k, v in campaign.items() if k in CampaignResponse.model_fields})
+    return CampaignResponse(
+        **{k: v for k, v in campaign.items() if k in CampaignResponse.model_fields}
+    )
 
 
 @router.get("", response_model=List[CampaignResponse])
@@ -241,11 +246,12 @@ async def list_campaigns(
 ) -> List[CampaignResponse]:
     """List all campaigns for the current tenant."""
     tenant_campaigns = [
-        c for c in _campaigns.values()
-        if c.get("tenant_id") == tenant_id
+        c for c in _campaigns.values() if c.get("tenant_id") == tenant_id
     ]
     return [
-        CampaignResponse(**{k: v for k, v in c.items() if k in CampaignResponse.model_fields})
+        CampaignResponse(
+            **{k: v for k, v in c.items() if k in CampaignResponse.model_fields}
+        )
         for c in tenant_campaigns
     ]
 
@@ -263,7 +269,9 @@ async def get_campaign(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Campaign {campaign_id} not found",
         )
-    return CampaignResponse(**{k: v for k, v in campaign.items() if k in CampaignResponse.model_fields})
+    return CampaignResponse(
+        **{k: v for k, v in campaign.items() if k in CampaignResponse.model_fields}
+    )
 
 
 @router.post("/{campaign_id}/run", response_model=RunCampaignResponse)

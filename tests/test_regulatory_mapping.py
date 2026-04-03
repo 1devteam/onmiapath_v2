@@ -298,7 +298,9 @@ def test_mapping_rule_add_custom_mapping(mapping_rule):
 # ============================================================================
 
 
-def test_authority_rule_guest_minimal_risk(authority_rule, minimal_risk_agent, mapping_rule):
+def test_authority_rule_guest_minimal_risk(
+    authority_rule, minimal_risk_agent, mapping_rule
+):
     """Test guest can access minimal risk."""
     # First assess risk
     mapping_rule.check({"asset_id": minimal_risk_agent.asset_id})
@@ -314,7 +316,9 @@ def test_authority_rule_guest_minimal_risk(authority_rule, minimal_risk_agent, m
     assert result.allowed
 
 
-def test_authority_rule_guest_limited_risk(authority_rule, limited_risk_agent, mapping_rule):
+def test_authority_rule_guest_limited_risk(
+    authority_rule, limited_risk_agent, mapping_rule
+):
     """Test guest cannot access limited risk."""
     # First assess risk
     mapping_rule.check({"asset_id": limited_risk_agent.asset_id})
@@ -331,7 +335,9 @@ def test_authority_rule_guest_limited_risk(authority_rule, limited_risk_agent, m
     assert "cannot access limited-risk" in result.reason.lower()
 
 
-def test_authority_rule_user_limited_risk(authority_rule, limited_risk_agent, mapping_rule):
+def test_authority_rule_user_limited_risk(
+    authority_rule, limited_risk_agent, mapping_rule
+):
     """Test user can access limited risk."""
     # First assess risk
     mapping_rule.check({"asset_id": limited_risk_agent.asset_id})
@@ -449,7 +455,9 @@ def test_authority_rule_admin_unacceptable_risk(
     assert "unacceptable risk" in result.reason.lower()
 
 
-def test_authority_rule_compliance_officer_override(authority_rule, unacceptable_risk_agent):
+def test_authority_rule_compliance_officer_override(
+    authority_rule, unacceptable_risk_agent
+):
     """Test compliance officer can override unacceptable risk."""
     # Manually set risk assessment
     from backend.agents.compliance.regulatory_mapping import RiskAssessment

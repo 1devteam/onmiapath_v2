@@ -33,7 +33,9 @@ class CreateApprovalRequest(BaseModel):
     tool_name: str = Field(..., description="Tool requiring approval")
     parameters: Dict[str, Any] = Field(..., description="Tool parameters")
     reason: str = Field(..., description="Reason for requiring approval")
-    expires_in_seconds: Optional[int] = Field(None, description="Expiration time in seconds")
+    expires_in_seconds: Optional[int] = Field(
+        None, description="Expiration time in seconds"
+    )
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 

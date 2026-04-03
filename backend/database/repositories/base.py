@@ -244,4 +244,7 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             True if exists, False otherwise
         """
-        return self.db.query(self.model_class).filter(self.model_class.id == id).count() > 0
+        return (
+            self.db.query(self.model_class).filter(self.model_class.id == id).count()
+            > 0
+        )

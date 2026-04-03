@@ -79,7 +79,10 @@ class LineageRepository(BaseRepository[GovernanceLineageEvent]):
             query = query.filter(GovernanceLineageEvent.event_type == event_type)
 
         return (
-            query.order_by(desc(GovernanceLineageEvent.timestamp)).limit(limit).offset(offset).all()
+            query.order_by(desc(GovernanceLineageEvent.timestamp))
+            .limit(limit)
+            .offset(offset)
+            .all()
         )
 
     def get_by_actor(
@@ -128,7 +131,9 @@ class LineageRepository(BaseRepository[GovernanceLineageEvent]):
             .all()
         )
 
-    def get_recent_events(self, hours: int = 24, limit: int = 100) -> List[GovernanceLineageEvent]:
+    def get_recent_events(
+        self, hours: int = 24, limit: int = 100
+    ) -> List[GovernanceLineageEvent]:
         """
         Get recent events within time window
 

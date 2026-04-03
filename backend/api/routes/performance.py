@@ -2,6 +2,7 @@
 Agent Performance & Self-Improvement API Routes
 Monitor agent learning and optimization
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/api/v1/performance", tags=["performance"])
 
 class AgentPerformanceMetrics(BaseModel):
     """Performance metrics for an agent"""
+
     agent_id: str
     agent_type: str
     total_missions: int
@@ -30,6 +32,7 @@ class AgentPerformanceMetrics(BaseModel):
 
 class ImprovementEvent(BaseModel):
     """Self-improvement event record"""
+
     improvement_id: str
     agent_id: str
     timestamp: datetime
@@ -43,6 +46,7 @@ class ImprovementEvent(BaseModel):
 
 class PerformanceTrend(BaseModel):
     """Performance trend over time"""
+
     agent_id: str
     date: datetime
     success_rate: float
@@ -52,12 +56,10 @@ class PerformanceTrend(BaseModel):
 
 
 @router.get("/agents", response_model=List[AgentPerformanceMetrics])
-async def get_all_agent_performance(
-    current_user: User = Depends(get_current_user)
-):
+async def get_all_agent_performance(current_user: User = Depends(get_current_user)):
     """
     Get performance metrics for all agents in the tenant
-    
+
     Shows success rates, costs, and self-improvement activity
     """
     # TODO: Implement actual database queries
@@ -74,7 +76,7 @@ async def get_all_agent_performance(
             average_cost=0.15,
             total_improvements=5,
             last_improvement_date=datetime.utcnow(),
-            current_strategy_version=6
+            current_strategy_version=6,
         ),
         AgentPerformanceMetrics(
             agent_id=f"{current_user.tenant_id}_guardian",
@@ -87,15 +89,14 @@ async def get_all_agent_performance(
             average_cost=0.02,
             total_improvements=2,
             last_improvement_date=datetime.utcnow(),
-            current_strategy_version=3
-        )
+            current_strategy_version=3,
+        ),
     ]
 
 
 @router.get("/agents/{agent_id}", response_model=AgentPerformanceMetrics)
 async def get_agent_performance(
-    agent_id: str,
-    current_user: User = Depends(get_current_user)
+    agent_id: str, current_user: User = Depends(get_current_user)
 ):
     """Get performance metrics for a specific agent"""
     # TODO: Implement actual database query
@@ -107,11 +108,11 @@ async def get_improvement_history(
     limit: int = 50,
     offset: int = 0,
     agent_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get self-improvement event history
-    
+
     Shows when agents modified their own strategies and why
     """
     # TODO: Implement actual database query
@@ -125,20 +126,18 @@ async def get_improvement_history(
             new_strategy="Use GPT-3.5 for simple missions, GPT-4 for complex ones",
             performance_before={"success_rate": 0.92, "avg_cost": 0.25},
             performance_after={"success_rate": 0.95, "avg_cost": 0.15},
-            improvement_type="model_switch"
+            improvement_type="model_switch",
         )
     ]
 
 
 @router.get("/trends/{agent_id}", response_model=List[PerformanceTrend])
 async def get_performance_trends(
-    agent_id: str,
-    days: int = 30,
-    current_user: User = Depends(get_current_user)
+    agent_id: str, days: int = 30, current_user: User = Depends(get_current_user)
 ):
     """
     Get performance trends over time for an agent
-    
+
     Shows how the agent's performance has evolved through self-improvement
     """
     # TODO: Implement actual database query with time-series data
@@ -147,16 +146,15 @@ async def get_performance_trends(
 
 @router.post("/trigger-improvement/{agent_id}")
 async def trigger_manual_improvement(
-    agent_id: str,
-    current_user: User = Depends(get_current_user)
+    agent_id: str, current_user: User = Depends(get_current_user)
 ):
     """
     Manually trigger self-improvement analysis for an agent
-    
+
     Normally happens automatically every 10 missions
     """
     # TODO: Implement manual improvement trigger
     return {
         "message": f"Improvement analysis triggered for agent {agent_id}",
-        "status": "queued"
+        "status": "queued",
     }

@@ -526,9 +526,7 @@ class SchedulerService(LoggerMixin):
 
         return mission_id
 
-    async def _get_db_job(
-        self, job_id: str, tenant_id: str
-    ) -> Optional[ScheduledJob]:
+    async def _get_db_job(self, job_id: str, tenant_id: str) -> Optional[ScheduledJob]:
         """Fetch a ScheduledJob from the DB, enforcing tenant isolation."""
         async with self._session_factory() as session:
             query = (

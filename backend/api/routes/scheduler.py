@@ -39,7 +39,9 @@ router = APIRouter(prefix="/api/v1/scheduler", tags=["scheduler"])
 class CreateJobRequest(BaseModel):
     """Request body for creating a new scheduled job."""
 
-    name: str = Field(..., min_length=1, max_length=255, description="Human-readable job name")
+    name: str = Field(
+        ..., min_length=1, max_length=255, description="Human-readable job name"
+    )
     description: Optional[str] = Field(None, description="Optional description")
     agent_id: str = Field(..., description="Agent that will execute the missions")
     trigger_type: str = Field(..., description="'cron' or 'interval'")
@@ -47,10 +49,13 @@ class CreateJobRequest(BaseModel):
         None, description="Cron expression (required when trigger_type='cron')"
     )
     interval_seconds: Optional[int] = Field(
-        None, ge=1, description="Interval in seconds (required when trigger_type='interval')"
+        None,
+        ge=1,
+        description="Interval in seconds (required when trigger_type='interval')",
     )
     mission_payload: Dict[str, Any] = Field(
-        ..., description="Mission specification submitted to MissionExecutor on each trigger"
+        ...,
+        description="Mission specification submitted to MissionExecutor on each trigger",
     )
     max_runs: Optional[int] = Field(
         None, ge=1, description="Maximum number of runs (None = unlimited)"
@@ -112,6 +117,7 @@ def _get_scheduler_service():
     """
     try:
         from backend.main import get_scheduler_service
+
         return get_scheduler_service()
     except (ImportError, AttributeError):
         return None

@@ -223,7 +223,9 @@ class GovernanceNATSClient:
         self.subscriptions[f"webhooks_{event_type or 'all'}"] = sub
         print(f"Subscribed to {subject}")
 
-    async def subscribe_compliance_checks(self, handler: Callable[[Dict[str, Any]], None]) -> None:
+    async def subscribe_compliance_checks(
+        self, handler: Callable[[Dict[str, Any]], None]
+    ) -> None:
         """
         Subscribe to compliance check requests
 
@@ -373,7 +375,9 @@ async def handle_compliance_check(data: Dict[str, Any]) -> None:
     asset_id = data.get("asset_id")
     check_type_str = data.get("check_type", "asset_compliance")
 
-    logger.info("Running compliance check: asset_id=%s check_type=%s", asset_id, check_type_str)
+    logger.info(
+        "Running compliance check: asset_id=%s check_type=%s", asset_id, check_type_str
+    )
 
     try:
         from backend.agents.compliance.compliance_checker import (
@@ -508,7 +512,9 @@ async def handle_risk_recalculation(data: Dict[str, Any]) -> None:
             "minimal": DBRiskTier.MINIMAL,
         }
         tier_str = (
-            risk_score.tier.value if hasattr(risk_score.tier, "value") else str(risk_score.tier)
+            risk_score.tier.value
+            if hasattr(risk_score.tier, "value")
+            else str(risk_score.tier)
         )
         db_risk_tier = tier_map.get(tier_str.lower(), DBRiskTier.LIMITED)
 
@@ -542,7 +548,9 @@ async def handle_risk_recalculation(data: Dict[str, Any]) -> None:
                 ):
                     await governance_nats.publish_alert(
                         severity=(
-                            "error" if db_risk_tier == DBRiskTier.UNACCEPTABLE else "warning"
+                            "error"
+                            if db_risk_tier == DBRiskTier.UNACCEPTABLE
+                            else "warning"
                         ),
                         title=f"Risk tier escalated for asset {asset_id}",
                         description=(
@@ -605,7 +613,9 @@ async def handle_alert(data: Dict[str, Any]) -> None:
     }
 
     if severity == "critical":
-        logger.critical("ALERT [critical]: %s | %s | %s", title, description, log_payload)
+        logger.critical(
+            "ALERT [critical]: %s | %s | %s", title, description, log_payload
+        )
     elif severity == "error":
         logger.error("ALERT [error]: %s | %s | %s", title, description, log_payload)
     elif severity == "warning":

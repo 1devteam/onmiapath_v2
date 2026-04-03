@@ -49,6 +49,7 @@ class TestPlaywrightBrowserTool:
 
         try:
             from backend.integrations.tools.browser_tool import PlaywrightBrowserTool
+
             tool = PlaywrightBrowserTool()
             result = run(tool.execute(action="navigate", url="https://example.com"))
             assert result["success"] is False
@@ -64,6 +65,7 @@ class TestPlaywrightBrowserTool:
         """BrowserTool has correct name and category."""
         from backend.integrations.tools.browser_tool import PlaywrightBrowserTool
         from backend.agents.tools.tool_registry import ToolCategory
+
         tool = PlaywrightBrowserTool()
         assert tool.name == "browser"
         assert tool.category == ToolCategory.COMMUNICATION
@@ -79,6 +81,7 @@ class TestPlaywrightBrowserTool:
 
         try:
             from backend.integrations.tools.browser_tool import PlaywrightBrowserTool
+
             tool = PlaywrightBrowserTool()
             # Without a real browser, the tool will fail — we just test the
             # unknown action path via direct call
@@ -103,6 +106,7 @@ class TestTwitterTool:
         """TwitterTool has correct name and category."""
         from backend.integrations.tools.twitter_tool import TwitterTool
         from backend.agents.tools.tool_registry import ToolCategory
+
         tool = TwitterTool()
         assert tool.name == "twitter"
         assert tool.category == ToolCategory.COMMUNICATION
@@ -110,6 +114,7 @@ class TestTwitterTool:
     def test_twitter_tool_no_credentials_returns_error(self):
         """TwitterTool returns error when no credentials are configured."""
         from backend.integrations.tools.twitter_tool import TwitterTool
+
         tool = TwitterTool(
             api_key="",
             api_secret="",
@@ -226,8 +231,16 @@ class TestLeadGenerationWorkflow:
         bridge = MagicMock()
         bridge.has_tool = MagicMock(return_value=False)
         results = search_results or [
-            {"title": "Acme Corp", "url": "https://acme.com", "snippet": "Retail loss prevention"},
-            {"title": "Beta Inc", "url": "https://beta.com", "snippet": "Security solutions"},
+            {
+                "title": "Acme Corp",
+                "url": "https://acme.com",
+                "snippet": "Retail loss prevention",
+            },
+            {
+                "title": "Beta Inc",
+                "url": "https://beta.com",
+                "snippet": "Security solutions",
+            },
         ]
         bridge.call_tool = AsyncMock(return_value=json.dumps({"results": results}))
         return bridge
@@ -244,7 +257,9 @@ class TestLeadGenerationWorkflow:
 
     def test_lead_generation_basic_run(self):
         """LeadGenerationWorkflow returns qualified leads from search results."""
-        from backend.orchestration.lead_generation_workflow import LeadGenerationWorkflow
+        from backend.orchestration.lead_generation_workflow import (
+            LeadGenerationWorkflow,
+        )
 
         bridge = self._make_mock_bridge()
         llm_service = self._make_mock_llm_service(score=0.85)
@@ -254,11 +269,13 @@ class TestLeadGenerationWorkflow:
             tool_bridge=bridge,
         )
 
-        result = run(workflow.run(
-            query="retail loss prevention companies",
-            criteria="Mid-market retailers with 50+ locations",
-            max_leads=5,
-        ))
+        result = run(
+            workflow.run(
+                query="retail loss prevention companies",
+                criteria="Mid-market retailers with 50+ locations",
+                max_leads=5,
+            )
+        )
 
         assert result.query == "retail loss prevention companies"
         assert result.total_found == 2
@@ -269,7 +286,9 @@ class TestLeadGenerationWorkflow:
 
     def test_lead_generation_empty_search_returns_error(self):
         """LeadGenerationWorkflow handles empty search results gracefully."""
-        from backend.orchestration.lead_generation_workflow import LeadGenerationWorkflow
+        from backend.orchestration.lead_generation_workflow import (
+            LeadGenerationWorkflow,
+        )
 
         bridge = MagicMock()
         bridge.has_tool = MagicMock(return_value=False)
@@ -282,10 +301,12 @@ class TestLeadGenerationWorkflow:
             tool_bridge=bridge,
         )
 
-        result = run(workflow.run(
-            query="nonexistent company type xyz",
-            criteria="Any company",
-        ))
+        result = run(
+            workflow.run(
+                query="nonexistent company type xyz",
+                criteria="Any company",
+            )
+        )
 
         assert result.total_found == 0
         assert result.error is not None
@@ -293,12 +314,20 @@ class TestLeadGenerationWorkflow:
 
     def test_lead_generation_filters_by_min_score(self):
         """LeadGenerationWorkflow filters leads below min_score threshold."""
-        from backend.orchestration.lead_generation_workflow import LeadGenerationWorkflow
+        from backend.orchestration.lead_generation_workflow import (
+            LeadGenerationWorkflow,
+        )
 
-        bridge = self._make_mock_bridge(search_results=[
-            {"title": "Good Lead", "url": "https://good.com", "snippet": "Perfect match"},
-            {"title": "Bad Lead", "url": "https://bad.com", "snippet": "No match"},
-        ])
+        bridge = self._make_mock_bridge(
+            search_results=[
+                {
+                    "title": "Good Lead",
+                    "url": "https://good.com",
+                    "snippet": "Perfect match",
+                },
+                {"title": "Bad Lead", "url": "https://bad.com", "snippet": "No match"},
+            ]
+        )
 
         # First call returns 0.9, second returns 0.2
         llm_service = MagicMock()
@@ -315,11 +344,13 @@ class TestLeadGenerationWorkflow:
             tool_bridge=bridge,
         )
 
-        result = run(workflow.run(
-            query="test",
-            criteria="test",
-            min_score=0.5,
-        ))
+        result = run(
+            workflow.run(
+                query="test",
+                criteria="test",
+                min_score=0.5,
+            )
+        )
 
         assert result.total_qualified == 1
         assert result.leads[0].score == 0.9
@@ -334,7 +365,9 @@ class TestLeadGenerationWorkflow:
         result = LeadGenerationResult(
             query="test query",
             criteria="test criteria",
-            leads=[Lead(name="Test Co", url="https://test.com", snippet="Test", score=0.7)],
+            leads=[
+                Lead(name="Test Co", url="https://test.com", snippet="Test", score=0.7)
+            ],
             total_found=1,
             total_qualified=1,
             workflow_steps=["web_search", "llm_qualify"],
@@ -358,6 +391,7 @@ class TestSocialMediaPostingSaga:
     def _make_orchestrator(self):
         """Create a real SagaOrchestrator with a mock EventStore."""
         from backend.core.saga.saga_orchestrator import SagaOrchestrator
+
         event_store = MagicMock()
         # SagaOrchestrator._emit_event calls event_store.append()
         event_store.append = AsyncMock(return_value={"id": "evt_123"})
@@ -368,21 +402,27 @@ class TestSocialMediaPostingSaga:
     def _make_mission_executor(self, result_text="Test post content"):
         """Create a mock MissionExecutor."""
         executor = MagicMock()
-        executor.execute_mission = AsyncMock(return_value={
-            "status": "COMPLETED",
-            "result": result_text,
-            "cost": 0.01,
-        })
+        executor.execute_mission = AsyncMock(
+            return_value={
+                "status": "COMPLETED",
+                "result": result_text,
+                "cost": 0.01,
+            }
+        )
         return executor
 
     def _make_tool_bridge(self, has_tool=False):
         """Create a mock MCPToolBridge."""
         bridge = MagicMock()
         bridge.has_tool = MagicMock(return_value=has_tool)
-        bridge.call_tool = AsyncMock(return_value=json.dumps({
-            "success": True,
-            "tweet_id": "tweet_456",
-        }))
+        bridge.call_tool = AsyncMock(
+            return_value=json.dumps(
+                {
+                    "success": True,
+                    "tweet_id": "tweet_456",
+                }
+            )
+        )
         return bridge
 
     def test_saga_executes_successfully_in_simulation_mode(self):
@@ -390,7 +430,9 @@ class TestSocialMediaPostingSaga:
         from backend.core.saga.saga_orchestrator import SocialMediaPostingSaga
 
         orchestrator, event_store = self._make_orchestrator()
-        executor = self._make_mission_executor("Citadel AI is transforming retail security.")
+        executor = self._make_mission_executor(
+            "Citadel AI is transforming retail security."
+        )
         bridge = self._make_tool_bridge(has_tool=False)  # No real tool — simulation
 
         saga = SocialMediaPostingSaga(
@@ -400,15 +442,17 @@ class TestSocialMediaPostingSaga:
             event_store=event_store,
         )
 
-        success = run(saga.execute(
-            campaign_id="campaign_test_001",
-            agent_id="agent_test_001",
-            tenant_id="tenant_test",
-            platform="twitter",
-            brief="Write about how Citadel AI reduces retail shrink by 40%",
-            post_index=0,
-            total_posts=3,
-        ))
+        success = run(
+            saga.execute(
+                campaign_id="campaign_test_001",
+                agent_id="agent_test_001",
+                tenant_id="tenant_test",
+                platform="twitter",
+                brief="Write about how Citadel AI reduces retail shrink by 40%",
+                post_index=0,
+                total_posts=3,
+            )
+        )
 
         assert success is True
         # EventStore should have been called for record_post
@@ -429,13 +473,15 @@ class TestSocialMediaPostingSaga:
             event_store=event_store,
         )
 
-        run(saga.execute(
-            campaign_id="campaign_evt_test",
-            agent_id="agent_001",
-            tenant_id="tenant_001",
-            platform="twitter",
-            brief="Test brief",
-        ))
+        run(
+            saga.execute(
+                campaign_id="campaign_evt_test",
+                agent_id="agent_001",
+                tenant_id="tenant_001",
+                platform="twitter",
+                brief="Test brief",
+            )
+        )
 
         # Find the post_published event call
         calls = event_store.append_event.call_args_list
@@ -457,16 +503,18 @@ class TestSocialMediaPostingSaga:
             event_store=event_store,
         )
 
-        run(saga.execute(
-            campaign_id="campaign_schedule_test",
-            agent_id="agent_001",
-            tenant_id="tenant_001",
-            platform="twitter",
-            brief="Test brief",
-            post_index=0,
-            total_posts=3,
-            schedule_next_at="2026-03-03T12:00:00",
-        ))
+        run(
+            saga.execute(
+                campaign_id="campaign_schedule_test",
+                agent_id="agent_001",
+                tenant_id="tenant_001",
+                platform="twitter",
+                brief="Test brief",
+                post_index=0,
+                total_posts=3,
+                schedule_next_at="2026-03-03T12:00:00",
+            )
+        )
 
         calls = event_store.append_event.call_args_list
         event_types = [c.kwargs.get("event_type") or c.args[1] for c in calls]
@@ -487,16 +535,18 @@ class TestSocialMediaPostingSaga:
             event_store=event_store,
         )
 
-        run(saga.execute(
-            campaign_id="campaign_last_test",
-            agent_id="agent_001",
-            tenant_id="tenant_001",
-            platform="twitter",
-            brief="Test brief",
-            post_index=2,  # Last post (0-indexed, total=3)
-            total_posts=3,
-            schedule_next_at="2026-03-03T12:00:00",
-        ))
+        run(
+            saga.execute(
+                campaign_id="campaign_last_test",
+                agent_id="agent_001",
+                tenant_id="tenant_001",
+                platform="twitter",
+                brief="Test brief",
+                post_index=2,  # Last post (0-indexed, total=3)
+                total_posts=3,
+                schedule_next_at="2026-03-03T12:00:00",
+            )
+        )
 
         calls = event_store.append_event.call_args_list
         event_types = [c.kwargs.get("event_type") or c.args[1] for c in calls]
@@ -558,8 +608,18 @@ class TestCampaignsRoute:
         from backend.api.routes.campaigns import CampaignResponse
 
         fields = set(CampaignResponse.model_fields.keys())
-        required = {"id", "name", "platform", "brief", "agent_id", "tenant_id",
-                    "total_posts", "posts_published", "status", "created_at"}
+        required = {
+            "id",
+            "name",
+            "platform",
+            "brief",
+            "agent_id",
+            "tenant_id",
+            "total_posts",
+            "posts_published",
+            "status",
+            "created_at",
+        }
         assert required.issubset(fields)
 
     def test_run_campaign_response_model(self):
@@ -610,8 +670,10 @@ class TestToolRegistryPhase3:
             # Re-import to get fresh registry with mocked playwright
             from importlib import reload
             import backend.integrations.tools.browser_tool as bt
+
             reload(bt)
             from backend.agents.tools.tool_registry import ToolRegistry
+
             registry = ToolRegistry()
             # browser tool should be registered
             assert "browser" in registry.tools
@@ -628,8 +690,10 @@ class TestToolRegistryPhase3:
         try:
             from importlib import reload
             import backend.integrations.tools.twitter_tool as tt
+
             reload(tt)
             from backend.agents.tools.tool_registry import ToolRegistry
+
             registry = ToolRegistry()
             assert "twitter" in registry.tools
         finally:

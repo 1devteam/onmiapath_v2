@@ -108,10 +108,14 @@ def setup_logging(
 
     if json_logs:
         # JSON formatter for structured logs
-        formatter = OmnipathJsonFormatter("%(timestamp)s %(level)s %(name)s %(message)s")
+        formatter = OmnipathJsonFormatter(
+            "%(timestamp)s %(level)s %(name)s %(message)s"
+        )
     else:
         # Human-readable formatter for development
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
 
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
@@ -201,7 +205,9 @@ class LoggerMixin:
 
 
 # Example usage functions
-def log_api_request(method: str, path: str, status_code: int, duration_ms: float, **kwargs) -> None:
+def log_api_request(
+    method: str, path: str, status_code: int, duration_ms: float, **kwargs
+) -> None:
     """
     Log API request with structured data
 
@@ -224,7 +230,9 @@ def log_api_request(method: str, path: str, status_code: int, duration_ms: float
     )
 
 
-def log_mission_event(event_type: str, mission_id: str, agent_id: str, **kwargs) -> None:
+def log_mission_event(
+    event_type: str, mission_id: str, agent_id: str, **kwargs
+) -> None:
     """
     Log mission-related event
 

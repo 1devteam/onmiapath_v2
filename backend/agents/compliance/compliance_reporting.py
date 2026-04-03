@@ -149,7 +149,9 @@ class ComplianceReporter:
             findings.append(
                 {
                     "category": "High-Risk Assets",
-                    "severity": ("critical" if summary["high_risk_assets"] > 10 else "warning"),
+                    "severity": (
+                        "critical" if summary["high_risk_assets"] > 10 else "warning"
+                    ),
                     "description": f"{summary['high_risk_assets']} assets classified as HIGH or CRITICAL risk",  # noqa: E501
                     "details": {
                         "top_risks": [
@@ -246,10 +248,14 @@ class ComplianceReporter:
                     "dependencies": asset.dependencies,
                     "recent_events": recent_events,
                     "created_at": (
-                        asset.created_at.isoformat() if hasattr(asset, "created_at") else None
+                        asset.created_at.isoformat()
+                        if hasattr(asset, "created_at")
+                        else None
                     ),
                     "updated_at": (
-                        asset.updated_at.isoformat() if hasattr(asset, "updated_at") else None
+                        asset.updated_at.isoformat()
+                        if hasattr(asset, "updated_at")
+                        else None
                     ),
                 }
             )
@@ -259,9 +265,12 @@ class ComplianceReporter:
             "total_assets_audited": len(assets),
             "audit_period_days": days,
             "assets_by_status": {
-                status.value: sum(1 for a in assets if a.status == status) for status in AssetStatus
+                status.value: sum(1 for a in assets if a.status == status)
+                for status in AssetStatus
             },
-            "total_events_in_period": sum(len(a["recent_events"]) for a in asset_details),
+            "total_events_in_period": sum(
+                len(a["recent_events"]) for a in asset_details
+            ),
         }
 
         # Findings
@@ -298,7 +307,9 @@ class ComplianceReporter:
                 "Archive or remove deprecated assets to maintain clean inventory"
             )
         if untagged:
-            recommendations.append("Apply contextual tags to all assets for better governance")
+            recommendations.append(
+                "Apply contextual tags to all assets for better governance"
+            )
 
         return ComplianceReport(
             report_id=str(uuid.uuid4()),
@@ -337,13 +348,19 @@ class ComplianceReporter:
             tag_filter = ["eu-ai-act"]
         elif regulation == "gdpr":
             tag_filter = ["pii", "gdpr"]
-            relevant_assets = [a for a in assets if any(t in a.tags for t in tag_filter)]
+            relevant_assets = [
+                a for a in assets if any(t in a.tags for t in tag_filter)
+            ]
         elif regulation == "hipaa":
             tag_filter = ["phi", "hipaa", "healthcare"]
-            relevant_assets = [a for a in assets if any(t in a.tags for t in tag_filter)]
+            relevant_assets = [
+                a for a in assets if any(t in a.tags for t in tag_filter)
+            ]
         elif regulation == "sox":
             tag_filter = ["financial", "sox"]
-            relevant_assets = [a for a in assets if any(t in a.tags for t in tag_filter)]
+            relevant_assets = [
+                a for a in assets if any(t in a.tags for t in tag_filter)
+            ]
         else:
             raise ValueError(f"Unknown regulation: {regulation}")
 
@@ -423,7 +440,9 @@ class ComplianceReporter:
                     "description": f"{partial_compliant} assets partially comply with {regulation.upper()}",  # noqa: E501
                     "details": {
                         "assets": [
-                            a["asset_id"] for a in compliance_details if a["status"] == "partial"
+                            a["asset_id"]
+                            for a in compliance_details
+                            if a["status"] == "partial"
                         ]
                     },
                 }
@@ -440,7 +459,9 @@ class ComplianceReporter:
                 f"Address gaps in {partial_compliant} partially compliant assets"
             )
         if compliance_rate < 100:
-            recommendations.append(f"Target 100% compliance (currently {compliance_rate}%)")
+            recommendations.append(
+                f"Target 100% compliance (currently {compliance_rate}%)"
+            )
 
         return ComplianceReport(
             report_id=str(uuid.uuid4()),
@@ -456,7 +477,9 @@ class ComplianceReporter:
             },
         )
 
-    def generate_risk_assessment_report(self, generated_by: str = "system") -> ComplianceReport:
+    def generate_risk_assessment_report(
+        self, generated_by: str = "system"
+    ) -> ComplianceReport:
         """
         Generate risk assessment report.
 
@@ -488,8 +511,12 @@ class ComplianceReporter:
                         "tier": tier,
                         "breakdown": {
                             "inherent": round(breakdown.get("inherent", 0), 2),
-                            "data_sensitivity": round(breakdown.get("data_sensitivity", 0), 2),
-                            "operational": round(breakdown.get("operational_context", 0), 2),
+                            "data_sensitivity": round(
+                                breakdown.get("data_sensitivity", 0), 2
+                            ),
+                            "operational": round(
+                                breakdown.get("operational_context", 0), 2
+                            ),
                             "historical": round(breakdown.get("historical", 0), 2),
                         },
                     }
@@ -543,12 +570,19 @@ class ComplianceReporter:
         # Recommendations
         recommendations = []
         if summary["critical_assets"] > 0:
-            recommendations.append("Immediately review and mitigate CRITICAL risk assets")
-        if summary["high_assets"] + summary["critical_assets"] > metrics.total_assets * 0.2:
+            recommendations.append(
+                "Immediately review and mitigate CRITICAL risk assets"
+            )
+        if (
+            summary["high_assets"] + summary["critical_assets"]
+            > metrics.total_assets * 0.2
+        ):
             recommendations.append(
                 "Portfolio has >20% high/critical risk assets - implement risk reduction program"
             )
-        recommendations.append("Regularly review and update risk assessments to maintain accuracy")
+        recommendations.append(
+            "Regularly review and update risk assessments to maintain accuracy"
+        )
 
         return ComplianceReport(
             report_id=str(uuid.uuid4()),

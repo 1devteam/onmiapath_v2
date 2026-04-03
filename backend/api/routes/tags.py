@@ -224,7 +224,9 @@ async def get_tag_definition(name: str):
                     ttl_hours=rule.ttl_hours,
                 )
 
-        raise HTTPException(status_code=404, detail=f"Tag definition '{name}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Tag definition '{name}' not found"
+        )
 
     except HTTPException:
         raise
@@ -243,7 +245,9 @@ async def delete_tag_definition(name: str):
         tagging_rule = ContextualTaggingRule()
 
         if not tagging_rule.remove_rule(name):
-            raise HTTPException(status_code=404, detail=f"Tag definition '{name}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Tag definition '{name}' not found"
+            )
 
         return None
 
@@ -472,7 +476,9 @@ async def check_user_authority(request: AuthorityCheckRequest):
         asset = registry.get(request.asset_id)
 
         if not asset:
-            raise HTTPException(status_code=404, detail=f"Asset '{request.asset_id}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Asset '{request.asset_id}' not found"
+            )
 
         # Get asset risk level
         asset_risk_level = "minimal"

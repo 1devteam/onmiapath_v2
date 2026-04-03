@@ -203,14 +203,18 @@ async def auto_optimize_agent(agent_id: str):
             "preferred_model": config.preferred_model,
             "optimal_complexity": config.optimal_complexity,
             "max_cost_per_mission": (
-                round(config.max_cost_per_mission, 2) if config.max_cost_per_mission else None
+                round(config.max_cost_per_mission, 2)
+                if config.max_cost_per_mission
+                else None
             ),
             "target_duration": (
                 round(config.target_duration, 2) if config.target_duration else None
             ),
             "quality_threshold": round(config.quality_threshold, 3),
         },
-        "last_optimized": (config.last_optimized.isoformat() if config.last_optimized else None),
+        "last_optimized": (
+            config.last_optimized.isoformat() if config.last_optimized else None
+        ),
     }
 
 
@@ -235,14 +239,18 @@ async def get_agent_configuration(agent_id: str):
             "preferred_model": config.preferred_model,
             "optimal_complexity": config.optimal_complexity,
             "max_cost_per_mission": (
-                round(config.max_cost_per_mission, 2) if config.max_cost_per_mission else None
+                round(config.max_cost_per_mission, 2)
+                if config.max_cost_per_mission
+                else None
             ),
             "target_duration": (
                 round(config.target_duration, 2) if config.target_duration else None
             ),
             "quality_threshold": round(config.quality_threshold, 3),
         },
-        "last_optimized": (config.last_optimized.isoformat() if config.last_optimized else None),
+        "last_optimized": (
+            config.last_optimized.isoformat() if config.last_optimized else None
+        ),
     }
 
 
@@ -276,7 +284,9 @@ async def get_system_insights():
 async def get_recent_outcomes(
     agent_id: Optional[str] = Query(None, description="Filter by agent ID"),
     limit: int = Query(50, ge=1, le=200, description="Number of outcomes to return"),
-    hours: Optional[int] = Query(None, ge=1, le=720, description="Time window in hours"),
+    hours: Optional[int] = Query(
+        None, ge=1, le=720, description="Time window in hours"
+    ),
 ):
     """
     Get recent mission outcomes
@@ -284,7 +294,9 @@ async def get_recent_outcomes(
     Useful for debugging and monitoring recent performance
     """
     time_window = timedelta(hours=hours) if hours else None
-    outcomes = tracker.get_recent_outcomes(agent_id=agent_id, limit=limit, time_window=time_window)
+    outcomes = tracker.get_recent_outcomes(
+        agent_id=agent_id, limit=limit, time_window=time_window
+    )
 
     return {
         "count": len(outcomes),

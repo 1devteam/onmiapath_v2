@@ -38,13 +38,13 @@ logger = get_logger(__name__)
 class AgentRole(str, Enum):
     """Roles available in a workforce."""
 
-    COMMANDER = "commander"      # Decomposes goal, coordinates team
-    RESEARCHER = "researcher"    # Gathers information
-    ANALYST = "analyst"          # Processes and interprets data
-    WRITER = "writer"            # Produces content / reports
-    POSTER = "poster"            # Publishes to external platforms
-    REVIEWER = "reviewer"        # Quality-checks output before delivery
-    EXECUTOR = "executor"        # Generic task execution
+    COMMANDER = "commander"  # Decomposes goal, coordinates team
+    RESEARCHER = "researcher"  # Gathers information
+    ANALYST = "analyst"  # Processes and interprets data
+    WRITER = "writer"  # Produces content / reports
+    POSTER = "poster"  # Publishes to external platforms
+    REVIEWER = "reviewer"  # Quality-checks output before delivery
+    EXECUTOR = "executor"  # Generic task execution
 
 
 class WorkforceStatus(str, Enum):
@@ -85,7 +85,7 @@ class SubMission:
     role: AgentRole
     goal: str
     context: Dict[str, Any] = field(default_factory=dict)
-    depends_on: List[str] = field(default_factory=list)   # sub_mission_ids
+    depends_on: List[str] = field(default_factory=list)  # sub_mission_ids
     status: SubMissionStatus = SubMissionStatus.PENDING
     result: Optional[str] = None
     error: Optional[str] = None
@@ -106,7 +106,7 @@ class WorkforcePlan:
     workforce_id: str
     goal: str
     sub_missions: List[SubMission] = field(default_factory=list)
-    pipeline_type: str = "sequential"   # "sequential" | "parallel" | "mixed"
+    pipeline_type: str = "sequential"  # "sequential" | "parallel" | "mixed"
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -252,7 +252,8 @@ class WorkforceCoordinator:
 
             # Determine final status
             failed_count = sum(
-                1 for sm in run.sub_missions.values()
+                1
+                for sm in run.sub_missions.values()
                 if sm.status == SubMissionStatus.FAILED
             )
             if failed_count == 0:
@@ -378,23 +379,20 @@ Rules:
             if raw.startswith("```"):
                 lines = raw.split("\n")
                 raw = "\n".join(
-                    line for line in lines
-                    if not line.startswith("```")
+                    line for line in lines if not line.startswith("```")
                 ).strip()
 
             import json
+
             plan_data = json.loads(raw)
 
         except Exception as exc:
-            logger.warning(
-                f"Commander planning LLM failed ({exc}), using default plan"
-            )
+            logger.warning(f"Commander planning LLM failed ({exc}), using default plan")
             # Fallback: one sub-mission per role, sequential
             plan_data = {
                 "pipeline_type": "sequential",
                 "sub_missions": [
-                    {"role": r.value, "goal": goal, "depends_on": []}
-                    for r in roles
+                    {"role": r.value, "goal": goal, "depends_on": []} for r in roles
                 ],
             }
 
@@ -458,7 +456,8 @@ Rules:
         while pending:
             # Find all sub-missions whose dependencies are satisfied
             ready = [
-                sm for sm in pending
+                sm
+                for sm in pending
                 if all(dep in completed_ids for dep in sm.depends_on)
             ]
 
@@ -601,7 +600,8 @@ Rules:
         coherent result using the Commander LLM.
         """
         completed = [
-            sm for sm in run.sub_missions.values()
+            sm
+            for sm in run.sub_missions.values()
             if sm.status == SubMissionStatus.COMPLETED and sm.result
         ]
 
@@ -613,8 +613,7 @@ Rules:
 
         # Build synthesis prompt
         outputs_block = "\n\n".join(
-            f"[{sm.role.value.upper()} OUTPUT]\n{sm.result}"
-            for sm in completed
+            f"[{sm.role.value.upper()} OUTPUT]\n{sm.result}" for sm in completed
         )
 
         llm = self.llm_service.get_llm("commander", tenant_id)

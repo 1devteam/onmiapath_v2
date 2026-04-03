@@ -2,6 +2,7 @@
 Omnipath v4.5 - Main Application Entry Point
 Multi-agent AI system with emotional intelligence, agent economy, and self-improvement
 """
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,8 +17,7 @@ from backend.api.routes import economy, missions_v45, auth
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
-    
+
     # Log LLM provider configuration
     logger.info("LLM Providers configured:")
     if settings.OPENAI_API_KEY:
@@ -48,9 +48,9 @@ async def lifespan(app: FastAPI):
         logger.info("  - xAI (Grok): ✓")
     if settings.OLLAMA_BASE_URL:
         logger.info(f"  - Ollama: ✓ ({settings.OLLAMA_BASE_URL})")
-    
+
     yield
-    
+
     # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}")
 
@@ -63,7 +63,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 # CORS middleware
@@ -81,13 +81,13 @@ app.add_middleware(
 async def global_exception_handler(request: Request, exc: Exception):
     """Handle uncaught exceptions gracefully"""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "detail": "Internal server error",
-            "error": str(exc) if settings.DEBUG else "An unexpected error occurred"
-        }
+            "error": str(exc) if settings.DEBUG else "An unexpected error occurred",
+        },
     )
 
 
@@ -101,7 +101,7 @@ async def health_check():
         "status": "ok",
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
     }
 
 
@@ -117,7 +117,6 @@ async def root():
         "description": "Multi-agent AI system with emotional intelligence",
         "docs": "/docs",
         "health": "/health",
-
     }
 
 
@@ -142,9 +141,5 @@ async def startup_message():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "backend.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG
-    )
+
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)

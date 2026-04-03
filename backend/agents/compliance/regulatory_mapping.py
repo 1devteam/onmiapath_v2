@@ -195,7 +195,9 @@ class RegulatoryMappingRule:
             ),
         ]
 
-    def _determine_risk_level(self, tags: List[str]) -> tuple[RiskLevel, List[str], str]:
+    def _determine_risk_level(
+        self, tags: List[str]
+    ) -> tuple[RiskLevel, List[str], str]:
         """
         Determine risk level based on tags.
 
@@ -299,13 +301,9 @@ class RegulatoryMappingRule:
         # Build reason message
         if requirements:
             req_list = ", ".join(requirements)
-            reason = (
-                f"Asset '{asset_id}' mapped to {risk_level.value} risk. Requirements: {req_list}"
-            )
+            reason = f"Asset '{asset_id}' mapped to {risk_level.value} risk. Requirements: {req_list}"
         else:
-            reason = (
-                f"Asset '{asset_id}' mapped to {risk_level.value} risk with no special requirements"
-            )
+            reason = f"Asset '{asset_id}' mapped to {risk_level.value} risk with no special requirements"
 
         return ComplianceResult(allowed=True, rule=self.name, reason=reason)
 
@@ -454,13 +452,17 @@ class AutonomousAuthorityRule:
 
         # Access allowed
         oversight_note = (
-            " with human oversight" if has_oversight and risk_level == RiskLevel.HIGH else ""
+            " with human oversight"
+            if has_oversight and risk_level == RiskLevel.HIGH
+            else ""
         )
         reason = f"User '{user_id}' (level {user_level}) authorized to access {risk_level.value} risk asset '{asset_id}'{oversight_note}"  # noqa: E501
 
         return ComplianceResult(allowed=True, rule=self.name, reason=reason)
 
-    def _check_authority(self, user_level: int, risk_level: RiskLevel, has_oversight: bool) -> bool:
+    def _check_authority(
+        self, user_level: int, risk_level: RiskLevel, has_oversight: bool
+    ) -> bool:
         """
         Check if user level is sufficient for risk level.
 

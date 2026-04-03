@@ -73,7 +73,11 @@ class TestVaultService:
         mock_sf = MagicMock()
         vault = VaultService(session_factory=mock_sf, secret_key="roundtrip-test-key")
 
-        original = {"client_id": "abc123", "client_secret": "super-secret", "username": "bot"}
+        original = {
+            "client_id": "abc123",
+            "client_secret": "super-secret",
+            "username": "bot",
+        }
 
         # Encrypt
         plaintext = json.dumps(original).encode("utf-8")
@@ -200,7 +204,9 @@ class TestSchedulerService:
         """Zero interval raises ValueError."""
         from backend.core.scheduler.scheduler_service import SchedulerService
 
-        with pytest.raises(ValueError, match="interval_seconds must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="interval_seconds must be a positive integer"
+        ):
             SchedulerService._validate_trigger("interval", None, 0)
 
     def test_validate_trigger_invalid_type(self):
@@ -301,7 +307,9 @@ class TestRedditTool:
         )
         with patch("praw.Reddit") as mock_reddit:
             mock_reddit.return_value = MagicMock()
-            result = await tool._arun(json.dumps({"action": "fly", "subreddit": "python"}))
+            result = await tool._arun(
+                json.dumps({"action": "fly", "subreddit": "python"})
+            )
         assert "Error" in result
         assert "Unknown action" in result
 
@@ -370,7 +378,13 @@ class TestRedditTool:
 
         with patch("praw.Reddit", return_value=mock_reddit_instance):
             result = await tool._arun(
-                json.dumps({"action": "search", "subreddit": "artificial", "query": "AI agents"})
+                json.dumps(
+                    {
+                        "action": "search",
+                        "subreddit": "artificial",
+                        "query": "AI agents",
+                    }
+                )
             )
 
         assert "AI Agents Are Amazing" in result
@@ -397,6 +411,7 @@ class TestMigrationStructure:
     def test_migration_has_correct_revision(self):
         """Migration file has the expected revision ID."""
         import importlib.util
+
         _mig_path = (
             "/home/ubuntu/fresh_repo/alembic/versions/"
             "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
@@ -413,6 +428,7 @@ class TestMigrationStructure:
     def test_migration_upgrade_creates_both_tables(self):
         """upgrade() creates scheduled_jobs and external_api_keys tables."""
         import importlib.util
+
         _mig_path = (
             "/home/ubuntu/fresh_repo/alembic/versions/"
             "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
@@ -436,6 +452,7 @@ class TestMigrationStructure:
     def test_migration_downgrade_drops_both_tables(self):
         """downgrade() drops both tables."""
         import importlib.util
+
         _mig_path = (
             "/home/ubuntu/fresh_repo/alembic/versions/"
             "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
@@ -446,7 +463,9 @@ class TestMigrationStructure:
 
         dropped_tables = []
         mock_op = MagicMock()
-        mock_op.drop_table = MagicMock(side_effect=lambda name: dropped_tables.append(name))
+        mock_op.drop_table = MagicMock(
+            side_effect=lambda name: dropped_tables.append(name)
+        )
         mod.op = mock_op
         mod.downgrade()
 
@@ -468,11 +487,24 @@ class TestDatabaseModels:
 
         columns = {c.key for c in ScheduledJob.__table__.columns}
         required = {
-            "id", "name", "tenant_id", "agent_id", "created_by",
-            "trigger_type", "cron_expression", "interval_seconds",
-            "mission_payload", "is_active", "max_runs", "run_count",
-            "last_run_at", "next_run_at", "last_run_status",
-            "last_run_mission_id", "created_at", "updated_at",
+            "id",
+            "name",
+            "tenant_id",
+            "agent_id",
+            "created_by",
+            "trigger_type",
+            "cron_expression",
+            "interval_seconds",
+            "mission_payload",
+            "is_active",
+            "max_runs",
+            "run_count",
+            "last_run_at",
+            "next_run_at",
+            "last_run_status",
+            "last_run_mission_id",
+            "created_at",
+            "updated_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 
@@ -483,9 +515,18 @@ class TestDatabaseModels:
         # Use DB column names (c.key maps to DB column name in __table__.columns)
         columns = {c.key for c in ExternalAPIKey.__table__.columns}
         required = {
-            "id", "tenant_id", "created_by", "service", "key_name",
-            "encrypted_value", "nonce", "metadata", "is_active",
-            "created_at", "updated_at", "last_used_at",
+            "id",
+            "tenant_id",
+            "created_by",
+            "service",
+            "key_name",
+            "encrypted_value",
+            "nonce",
+            "metadata",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "last_used_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 

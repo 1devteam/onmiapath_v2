@@ -37,31 +37,43 @@ class RedditPostInput(BaseModel):
     subreddit: str = Field(..., description="Subreddit name (without r/ prefix)")
     title: str = Field(..., min_length=1, max_length=300, description="Post title")
     body: str = Field(default="", description="Post body text (for text posts)")
-    url: Optional[str] = Field(None, description="URL (for link posts; omit for text posts)")
+    url: Optional[str] = Field(
+        None, description="URL (for link posts; omit for text posts)"
+    )
     flair: Optional[str] = Field(None, description="Optional post flair text")
 
 
 class RedditCommentInput(BaseModel):
     """Input for commenting on a Reddit post."""
 
-    post_id: str = Field(..., description="Reddit post ID (e.g. 't3_abc123' or just 'abc123')")
+    post_id: str = Field(
+        ..., description="Reddit post ID (e.g. 't3_abc123' or just 'abc123')"
+    )
     body: str = Field(..., min_length=1, description="Comment text")
 
 
 class RedditSearchInput(BaseModel):
     """Input for searching Reddit."""
 
-    subreddit: str = Field(..., description="Subreddit to search (use 'all' for all of Reddit)")
+    subreddit: str = Field(
+        ..., description="Subreddit to search (use 'all' for all of Reddit)"
+    )
     query: str = Field(..., description="Search query")
-    sort: str = Field(default="relevance", description="Sort: relevance, hot, top, new, comments")
-    limit: int = Field(default=10, ge=1, le=100, description="Number of results to return")
+    sort: str = Field(
+        default="relevance", description="Sort: relevance, hot, top, new, comments"
+    )
+    limit: int = Field(
+        default=10, ge=1, le=100, description="Number of results to return"
+    )
 
 
 class RedditHotPostsInput(BaseModel):
     """Input for fetching hot posts from a subreddit."""
 
     subreddit: str = Field(..., description="Subreddit name")
-    limit: int = Field(default=10, ge=1, le=100, description="Number of posts to return")
+    limit: int = Field(
+        default=10, ge=1, le=100, description="Number of posts to return"
+    )
 
 
 # =============================================================================
@@ -268,7 +280,9 @@ class RedditTool(BaseTool):
                 key_name="production",
             )
         except Exception as exc:
-            logger.error(f"Failed to fetch Reddit credentials from vault: {exc}", exc_info=True)
+            logger.error(
+                f"Failed to fetch Reddit credentials from vault: {exc}", exc_info=True
+            )
             return None
 
     @staticmethod

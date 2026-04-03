@@ -199,7 +199,9 @@ def can_approve_risk_tier(user: User, risk_tier: str) -> bool:
         AuthorityLevel.COMPLIANCE_OFFICER: 4,
     }
 
-    return authority_hierarchy.get(authority, 0) >= authority_hierarchy.get(required, 999)
+    return authority_hierarchy.get(authority, 0) >= authority_hierarchy.get(
+        required, 999
+    )
 
 
 def get_approval_authority_for_user(user: User) -> str:

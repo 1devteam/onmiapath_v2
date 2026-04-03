@@ -107,7 +107,9 @@ class TagRule:
                 # Check if any pattern matches data accessed
                 patterns = condition.get("patterns", [])
                 data_accessed = context.get("data_accessed", [])
-                if not any(pattern in str(data_accessed).lower() for pattern in patterns):
+                if not any(
+                    pattern in str(data_accessed).lower() for pattern in patterns
+                ):
                     return False
 
             elif condition_type == "api_endpoint":

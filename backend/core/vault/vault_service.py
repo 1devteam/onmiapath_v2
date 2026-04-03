@@ -314,7 +314,9 @@ class VaultService(LoggerMixin):
             return json.loads(plaintext.decode("utf-8"))
         except Exception as exc:
             self.log_error(f"Vault decryption failed: {exc}", exc_info=True)
-            raise ValueError("Failed to decrypt vault key — possible key rotation or tampering")
+            raise ValueError(
+                "Failed to decrypt vault key — possible key rotation or tampering"
+            )
 
     async def _find_key(
         self, tenant_id: str, service: str, key_name: str

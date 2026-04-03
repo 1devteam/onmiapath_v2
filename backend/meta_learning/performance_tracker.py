@@ -102,7 +102,9 @@ class PerformanceTracker:
         self._update_agent_performance(outcome)
         self._update_complexity_stats(outcome)
 
-        logger.debug(f"Recorded outcome for mission {outcome.mission_id}: {outcome.outcome.value}")
+        logger.debug(
+            f"Recorded outcome for mission {outcome.mission_id}: {outcome.outcome.value}"
+        )
 
     def _update_agent_performance(self, outcome: MissionOutcome):
         """Update aggregated performance metrics for an agent"""
@@ -172,12 +174,12 @@ class PerformanceTracker:
         recent = agent_outcomes[-10:]
         previous = agent_outcomes[-20:-10]
 
-        recent_success_rate = sum(1 for o in recent if o.outcome == OutcomeType.SUCCESS) / len(
-            recent
-        )
-        previous_success_rate = sum(1 for o in previous if o.outcome == OutcomeType.SUCCESS) / len(
-            previous
-        )
+        recent_success_rate = sum(
+            1 for o in recent if o.outcome == OutcomeType.SUCCESS
+        ) / len(recent)
+        previous_success_rate = sum(
+            1 for o in previous if o.outcome == OutcomeType.SUCCESS
+        ) / len(previous)
 
         diff = recent_success_rate - previous_success_rate
 

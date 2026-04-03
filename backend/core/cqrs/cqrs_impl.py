@@ -200,7 +200,9 @@ class StartMissionCommandHandler(CommandHandler[StartMissionCommand, None]):
             },
         )
 
-        self.log_info("Mission started", mission_id=command.mission_id, agent_id=command.agent_id)
+        self.log_info(
+            "Mission started", mission_id=command.mission_id, agent_id=command.agent_id
+        )
 
 
 class CompleteMissionCommandHandler(CommandHandler[CompleteMissionCommand, None]):
@@ -528,7 +530,11 @@ class AgentReadModel(ReadModel):
         """List agents by tenant"""
         # In production, this would query a denormalized table
         # For now, return cached agents
-        agents = [agent for agent in self._cache.values() if agent.get("tenant_id") == tenant_id]
+        agents = [
+            agent
+            for agent in self._cache.values()
+            if agent.get("tenant_id") == tenant_id
+        ]
 
         return agents[offset : offset + limit]
 
@@ -746,7 +752,9 @@ class GetAgentBalanceQueryHandler(QueryHandler[GetAgentBalanceQuery, float]):
         return balance
 
 
-class GetPerformanceMetricsQueryHandler(QueryHandler[GetPerformanceMetricsQuery, Dict[str, Any]]):
+class GetPerformanceMetricsQueryHandler(
+    QueryHandler[GetPerformanceMetricsQuery, Dict[str, Any]]
+):
     """
     Handler for GetPerformanceMetricsQuery.
 
@@ -882,7 +890,9 @@ class QueryBus(LoggerMixin):
         """Initialize query bus"""
         self._handlers: Dict[Type[Query], QueryHandler] = {}
 
-    def register(self, query_type: Type[TQuery], handler: QueryHandler[TQuery, Any]) -> None:
+    def register(
+        self, query_type: Type[TQuery], handler: QueryHandler[TQuery, Any]
+    ) -> None:
         """
         Register query handler
 

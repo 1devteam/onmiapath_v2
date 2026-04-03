@@ -158,7 +158,8 @@ class SagaOrchestrator(LoggerMixin):
             self.log_info(
                 f"Saga completed successfully: {saga.name}",
                 saga_id=saga.saga_id,
-                duration_ms=(saga.completed_at - saga.started_at).total_seconds() * 1000,
+                duration_ms=(saga.completed_at - saga.started_at).total_seconds()
+                * 1000,
             )
             await self._emit_event(
                 saga_id=saga.saga_id,
@@ -207,7 +208,8 @@ class SagaOrchestrator(LoggerMixin):
                 f"Step completed: {step.name}",
                 saga_id=saga.saga_id,
                 step_id=step.step_id,
-                duration_ms=(step.completed_at - step.started_at).total_seconds() * 1000,
+                duration_ms=(step.completed_at - step.started_at).total_seconds()
+                * 1000,
             )
             await self._emit_event(
                 saga_id=saga.saga_id,
@@ -470,7 +472,11 @@ class MissionExecutionSaga:
         try:
             from backend.database.models import Mission
 
-            mission = self.db.query(Mission).filter(Mission.id == context["mission_id"]).first()
+            mission = (
+                self.db.query(Mission)
+                .filter(Mission.id == context["mission_id"])
+                .first()
+            )
             if mission:
                 mission.status = "CANCELLED"
                 mission.error = "Saga compensation: mission cancelled"
@@ -494,15 +500,23 @@ class MissionExecutionSaga:
 
         mission_result = context.get("execute_mission_result", {})
         try:
-            mission = self.db.query(Mission).filter(Mission.id == context["mission_id"]).first()
+            mission = (
+                self.db.query(Mission)
+                .filter(Mission.id == context["mission_id"])
+                .first()
+            )
             if mission:
                 # Enrich with saga tracking
                 if isinstance(mission.context, dict):
                     mission.context["saga_tracked"] = True
-                    mission.context["saga_status"] = mission_result.get("status", "UNKNOWN")
+                    mission.context["saga_status"] = mission_result.get(
+                        "status", "UNKNOWN"
+                    )
                 self.db.commit()
         except Exception as exc:
-            logger.warning(f"Could not enrich mission record {context['mission_id']}: {exc}")
+            logger.warning(
+                f"Could not enrich mission record {context['mission_id']}: {exc}"
+            )
         return {"recorded": True, "mission_status": mission_result.get("status")}
 
     async def _delete_result(
@@ -512,13 +526,19 @@ class MissionExecutionSaga:
         try:
             from backend.database.models import Mission
 
-            mission = self.db.query(Mission).filter(Mission.id == context["mission_id"]).first()
+            mission = (
+                self.db.query(Mission)
+                .filter(Mission.id == context["mission_id"])
+                .first()
+            )
             if mission and isinstance(mission.context, dict):
                 mission.context.pop("saga_tracked", None)
                 mission.context.pop("saga_status", None)
                 self.db.commit()
         except Exception as exc:
-            logger.warning(f"Could not clean up mission record {context['mission_id']}: {exc}")
+            logger.warning(
+                f"Could not clean up mission record {context['mission_id']}: {exc}"
+            )
 
     # ------------------------------------------------------------------
     # Step: deduct_cost
@@ -556,7 +576,9 @@ class MissionExecutionSaga:
 
         return {"settled": True, "actual_cost": actual_cost, "adjustment": difference}
 
-    async def _refund_cost(self, context: Dict[str, Any], result: Optional[Dict[str, Any]]) -> None:
+    async def _refund_cost(
+        self, context: Dict[str, Any], result: Optional[Dict[str, Any]]
+    ) -> None:
         """Refund the actual cost deduction if the saga is compensated."""
         if result and result.get("settled"):
             await self.marketplace.reward(
@@ -747,7 +769,9 @@ class AgentCreationSaga:
         except Exception as exc:
             # Governance registration failure is non-fatal for agent creation
             # but we still record it for audit purposes.
-            logger.warning(f"Governance registration failed for agent {context['agent_id']}: {exc}")
+            logger.warning(
+                f"Governance registration failed for agent {context['agent_id']}: {exc}"
+            )
         return {"registered": True}
 
     async def _deregister_governance(
@@ -975,7 +999,7 @@ class SocialMediaPostingSaga:
             f"Review this {context['platform']} post for policy compliance. "
             f"Check for: spam, misinformation, hate speech, or inappropriate content.\n\n"
             f"Post: {draft}\n\n"
-            f"Respond with JSON: {{\"approved\": true/false, \"reason\": \"...\"}}"
+            f'Respond with JSON: {{"approved": true/false, "reason": "..."}}'
         )
 
         result = await self.mission_executor.execute_mission(
@@ -986,10 +1010,14 @@ class SocialMediaPostingSaga:
         )
 
         import json as _json
+
         try:
             validation = _json.loads(result.get("result", '{"approved": true}'))
         except _json.JSONDecodeError:
-            validation = {"approved": True, "reason": "Validation parse error — defaulting to approved"}
+            validation = {
+                "approved": True,
+                "reason": "Validation parse error — defaulting to approved",
+            }
 
         if not validation.get("approved", True):
             raise ValueError(
@@ -1027,7 +1055,10 @@ class SocialMediaPostingSaga:
         if tool_name and self.tool_bridge.has_tool(tool_name):
             raw = await self.tool_bridge.call_tool(
                 tool_name,
-                {"action": "post_tweet" if platform == "twitter" else "submit_post", "text": draft},
+                {
+                    "action": "post_tweet" if platform == "twitter" else "submit_post",
+                    "text": draft,
+                },
             )
             post_result = _json.loads(raw) if isinstance(raw, str) else raw
         else:
@@ -1094,9 +1125,14 @@ class SocialMediaPostingSaga:
                 "total_posts": context["total_posts"],
                 "post_id": post_result.get("post_id") or post_result.get("tweet_id"),
                 "simulated": post_result.get("simulated", False),
-                "char_count": context.get("draft_content_result", {}).get("char_count", 0),
+                "char_count": context.get("draft_content_result", {}).get(
+                    "char_count", 0
+                ),
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
         return {"recorded": True, "event_type": "campaign.post_published"}
@@ -1117,7 +1153,10 @@ class SocialMediaPostingSaga:
                     "post_index": context["post_index"],
                     "reason": "Saga compensation",
                 },
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )
 
     # ------------------------------------------------------------------
@@ -1155,10 +1194,17 @@ class SocialMediaPostingSaga:
                 "platform": context["platform"],
                 "brief": context["brief"],
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
-        return {"scheduled": True, "next_post_index": next_index, "at": schedule_next_at}
+        return {
+            "scheduled": True,
+            "next_post_index": next_index,
+            "at": schedule_next_at,
+        }
 
     async def _cancel_next(
         self, context: Dict[str, Any], result: Optional[Dict[str, Any]]
@@ -1174,7 +1220,10 @@ class SocialMediaPostingSaga:
                     "next_post_index": result.get("next_post_index"),
                     "reason": "Saga compensation",
                 },
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )
 
 
@@ -1378,7 +1427,10 @@ class DealClosingSaga:
                 "score": score,
                 "notes": notes,
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
         return {"score": score, "notes": notes}
@@ -1400,7 +1452,10 @@ class DealClosingSaga:
                 "estimated_value": context.get("estimated_value"),
                 "probability": context.get("probability"),
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
         return {"opportunity_id": opp_id}
@@ -1447,7 +1502,10 @@ class DealClosingSaga:
                 "opportunity_id": context["opportunity_id"],
                 "title": proposal.title,
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
         return {"proposal_id": proposal.id, "title": proposal.title}
@@ -1480,7 +1538,10 @@ class DealClosingSaga:
                     "proposal_id": context["proposal_id"],
                     "sent_via": "email" if proposal.sent_to_email else "linkedin",
                 },
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )
 
         return {"sent": sent}
@@ -1502,7 +1563,10 @@ class DealClosingSaga:
                 "proposal_id": context.get("proposal_id"),
                 "opportunity_id": context.get("opportunity_id"),
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
         return {"response_status": "pending"}
 
@@ -1533,7 +1597,10 @@ class DealClosingSaga:
                 "currency": "USD",
                 "payment_status": "pending",
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
         return {"deal_id": deal_id, "value": deal_value}
@@ -1552,7 +1619,10 @@ class DealClosingSaga:
                 "currency": "USD",
                 "agent_id": context["agent_id"],
             },
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
         return {"revenue_recorded": True, "amount": context.get("deal_value", 0.0)}
 
@@ -1568,7 +1638,10 @@ class DealClosingSaga:
             aggregate_type="lead",
             event_type="lead.disqualified",
             data={"lead_id": context["lead_id"], "reason": "Saga compensation"},
-            metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+            metadata={
+                "tenant_id": context["tenant_id"],
+                "user_id": context["agent_id"],
+            },
         )
 
     async def _delete_opportunity(
@@ -1581,7 +1654,10 @@ class DealClosingSaga:
                 aggregate_type="opportunity",
                 event_type="opportunity.cancelled",
                 data={"opportunity_id": opp_id, "reason": "Saga compensation"},
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )
 
     async def _delete_draft_proposal(
@@ -1594,7 +1670,10 @@ class DealClosingSaga:
                 aggregate_type="proposal",
                 event_type="proposal.cancelled",
                 data={"proposal_id": prop_id, "reason": "Saga compensation"},
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )
 
     async def _mark_proposal_cancelled(
@@ -1607,7 +1686,10 @@ class DealClosingSaga:
                 aggregate_type="proposal",
                 event_type="proposal.outreach_cancelled",
                 data={"proposal_id": prop_id, "reason": "Saga compensation"},
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )
 
     async def _reopen_opportunity(
@@ -1623,5 +1705,8 @@ class DealClosingSaga:
                     "opportunity_id": opp_id,
                     "reason": "Saga compensation — deal close reversed",
                 },
-                metadata={"tenant_id": context["tenant_id"], "user_id": context["agent_id"]},
+                metadata={
+                    "tenant_id": context["tenant_id"],
+                    "user_id": context["agent_id"],
+                },
             )

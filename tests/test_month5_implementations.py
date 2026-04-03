@@ -324,7 +324,9 @@ class TestCommandClasses:
         """Test AdjustCreditCommand creation with actual signature"""
         from backend.core.cqrs.cqrs_impl import AdjustCreditCommand
 
-        cmd = AdjustCreditCommand(agent_id="agent_001", amount=10.0, reason="mission_reward")
+        cmd = AdjustCreditCommand(
+            agent_id="agent_001", amount=10.0, reason="mission_reward"
+        )
         assert cmd.agent_id == "agent_001"
         assert cmd.amount == 10.0
         assert cmd.reason == "mission_reward"
@@ -517,7 +519,9 @@ class TestSagaOrchestrator:
         async def comp_fn(ctx):
             return ctx
 
-        step = orchestrator.add_step(saga=saga, name="step_1", action=step_fn, compensation=comp_fn)
+        step = orchestrator.add_step(
+            saga=saga, name="step_1", action=step_fn, compensation=comp_fn
+        )
         assert len(saga.steps) == 1
         assert saga.steps[0].name == "step_1"
         assert step.step_id is not None

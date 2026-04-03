@@ -73,7 +73,11 @@ class ResearcherAgent(ComplianceAwareMixin):
             # Record agent invocation
             self.metrics.record_agent_invocation(
                 agent_type="researcher",
-                model=(self.llm.model_name if hasattr(self.llm, "model_name") else "unknown"),
+                model=(
+                    self.llm.model_name
+                    if hasattr(self.llm, "model_name")
+                    else "unknown"
+                ),
             )
 
             # Step 1: Conduct initial web search (with compliance)
@@ -123,7 +127,9 @@ class ResearcherAgent(ComplianceAwareMixin):
 
         except Exception as e:
             logger.error(f"Research task failed: {e}")
-            self.metrics.record_agent_error(agent_type="researcher", error_type=type(e).__name__)
+            self.metrics.record_agent_error(
+                agent_type="researcher", error_type=type(e).__name__
+            )
             return {"success": False, "error": str(e)}
 
     def _get_system_prompt(self) -> str:
@@ -144,7 +150,9 @@ class ResearcherAgent(ComplianceAwareMixin):
         )
         return assemble_prompt(role_prompt)
 
-    def _build_synthesis_prompt(self, query: str, search_results: Dict[str, Any]) -> str:
+    def _build_synthesis_prompt(
+        self, query: str, search_results: Dict[str, Any]
+    ) -> str:
         """Build a prompt for synthesizing search results."""
         sources_text = "\n\n".join(
             [
@@ -180,7 +188,9 @@ Task: Analyze these sources and provide a comprehensive answer to the research q
                 {
                     "id": i + 1,
                     "statement": sentence,
-                    "confidence": ("high" if i < 2 else "medium"),  # Simplified confidence
+                    "confidence": (
+                        "high" if i < 2 else "medium"
+                    ),  # Simplified confidence
                 }
             )
 
@@ -237,7 +247,11 @@ class AnalystAgent(ComplianceAwareMixin):
             # Record agent invocation
             self.metrics.record_agent_invocation(
                 agent_type="analyst",
-                model=(self.llm.model_name if hasattr(self.llm, "model_name") else "unknown"),
+                model=(
+                    self.llm.model_name
+                    if hasattr(self.llm, "model_name")
+                    else "unknown"
+                ),
             )
 
             # Step 1: Understand the data structure
@@ -269,7 +283,9 @@ Provide:
 
         except Exception as e:
             logger.error(f"Analysis task failed: {e}")
-            self.metrics.record_agent_error(agent_type="analyst", error_type=type(e).__name__)
+            self.metrics.record_agent_error(
+                agent_type="analyst", error_type=type(e).__name__
+            )
             return {"success": False, "error": str(e)}
 
     def _summarize_data(self, data: Dict[str, Any]) -> str:
@@ -353,13 +369,19 @@ class DeveloperAgent(ComplianceAwareMixin):
             # Record agent invocation
             self.metrics.record_agent_invocation(
                 agent_type="developer",
-                model=(self.llm.model_name if hasattr(self.llm, "model_name") else "unknown"),
+                model=(
+                    self.llm.model_name
+                    if hasattr(self.llm, "model_name")
+                    else "unknown"
+                ),
             )
 
             if task_type == "generate":
                 return await self._generate_code(specification)
             elif task_type == "debug":
-                return await self._debug_code(task.get("code", ""), task.get("error", ""))
+                return await self._debug_code(
+                    task.get("code", ""), task.get("error", "")
+                )
             elif task_type == "review":
                 return await self._review_code(task.get("code", ""))
             elif task_type == "test":
@@ -369,7 +391,9 @@ class DeveloperAgent(ComplianceAwareMixin):
 
         except Exception as e:
             logger.error(f"Development task failed: {e}")
-            self.metrics.record_agent_error(agent_type="developer", error_type=type(e).__name__)
+            self.metrics.record_agent_error(
+                agent_type="developer", error_type=type(e).__name__
+            )
             return {"success": False, "error": str(e)}
 
     async def _generate_code(self, specification: str) -> Dict[str, Any]:

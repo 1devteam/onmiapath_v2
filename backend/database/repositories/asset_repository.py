@@ -107,7 +107,9 @@ class AssetRepository(BaseRepository[GovernanceAsset]):
         Returns:
             List of GovernanceAsset instances
         """
-        query = self.db.query(GovernanceAsset).filter(GovernanceAsset.tenant_id == tenant_id)
+        query = self.db.query(GovernanceAsset).filter(
+            GovernanceAsset.tenant_id == tenant_id
+        )
 
         if asset_type:
             query = query.filter(GovernanceAsset.asset_type == asset_type)
@@ -115,7 +117,12 @@ class AssetRepository(BaseRepository[GovernanceAsset]):
         if status:
             query = query.filter(GovernanceAsset.status == status)
 
-        return query.order_by(GovernanceAsset.created_at.desc()).limit(limit).offset(offset).all()
+        return (
+            query.order_by(GovernanceAsset.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
 
     def get_by_owner(
         self, owner_id: str, tenant_id: str, limit: int = 100, offset: int = 0
@@ -175,7 +182,9 @@ class AssetRepository(BaseRepository[GovernanceAsset]):
             .all()
         )
 
-    def get_high_risk_assets(self, tenant_id: str, limit: int = 100) -> List[GovernanceAsset]:
+    def get_high_risk_assets(
+        self, tenant_id: str, limit: int = 100
+    ) -> List[GovernanceAsset]:
         """
         Get high and unacceptable risk assets
 
@@ -191,7 +200,9 @@ class AssetRepository(BaseRepository[GovernanceAsset]):
             .filter(
                 and_(
                     GovernanceAsset.tenant_id == tenant_id,
-                    GovernanceAsset.risk_tier.in_([RiskTier.HIGH, RiskTier.UNACCEPTABLE]),
+                    GovernanceAsset.risk_tier.in_(
+                        [RiskTier.HIGH, RiskTier.UNACCEPTABLE]
+                    ),
                 )
             )
             .order_by(GovernanceAsset.risk_score.desc())
@@ -253,7 +264,9 @@ class AssetRepository(BaseRepository[GovernanceAsset]):
         Returns:
             List of GovernanceAsset instances
         """
-        query = self.db.query(GovernanceAsset).filter(GovernanceAsset.tenant_id == tenant_id)
+        query = self.db.query(GovernanceAsset).filter(
+            GovernanceAsset.tenant_id == tenant_id
+        )
 
         if match_all:
             # Asset must have all tags
@@ -263,7 +276,12 @@ class AssetRepository(BaseRepository[GovernanceAsset]):
             # Asset must have at least one tag
             query = query.filter(GovernanceAsset.tags.overlap(tags))
 
-        return query.order_by(GovernanceAsset.created_at.desc()).limit(limit).offset(offset).all()
+        return (
+            query.order_by(GovernanceAsset.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
 
     def update_risk_assessment(
         self, asset_id: str, risk_tier: RiskTier, risk_score: float

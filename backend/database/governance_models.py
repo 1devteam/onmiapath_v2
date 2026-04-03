@@ -137,7 +137,9 @@ class GovernanceAsset(Base):
     id = Column(String(50), primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     asset_type = Column(SQLEnum(AssetType), nullable=False, index=True)
-    status = Column(SQLEnum(AssetStatus), nullable=False, index=True, default=AssetStatus.ACTIVE)
+    status = Column(
+        SQLEnum(AssetStatus), nullable=False, index=True, default=AssetStatus.ACTIVE
+    )
 
     # Ownership & tenant
     owner_id = Column(String(50), nullable=False, index=True)
@@ -159,7 +161,9 @@ class GovernanceAsset(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
     last_assessed_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -198,8 +202,12 @@ class GovernanceLineageEvent(Base):
     )
 
     id = Column(String(50), primary_key=True, index=True)
-    asset_id = Column(String(50), ForeignKey("governance_assets.id"), nullable=False, index=True)
-    event_type = Column(String(50), nullable=False, index=True)  # created, updated, deployed, etc.
+    asset_id = Column(
+        String(50), ForeignKey("governance_assets.id"), nullable=False, index=True
+    )
+    event_type = Column(
+        String(50), nullable=False, index=True
+    )  # created, updated, deployed, etc.
     event_data = Column(JSON, default=dict, nullable=False)
     actor_id = Column(String(50), nullable=False, index=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
@@ -217,7 +225,9 @@ class GovernanceRiskScore(Base):
     __tablename__ = "governance_risk_scores"
     __table_args__ = (
         # Trend queries: asset history ordered by time
-        Index("ix_governance_risk_scores_asset_calculated", "asset_id", "calculated_at"),
+        Index(
+            "ix_governance_risk_scores_asset_calculated", "asset_id", "calculated_at"
+        ),
         # Tier filter: asset + tier + calculated_at
         Index(
             "ix_governance_risk_scores_asset_tier_calculated",
@@ -228,7 +238,9 @@ class GovernanceRiskScore(Base):
     )
 
     id = Column(String(50), primary_key=True, index=True)
-    asset_id = Column(String(50), ForeignKey("governance_assets.id"), nullable=False, index=True)
+    asset_id = Column(
+        String(50), ForeignKey("governance_assets.id"), nullable=False, index=True
+    )
 
     # Risk assessment
     tier = Column(SQLEnum(RiskTier), nullable=False, index=True)
@@ -236,7 +248,9 @@ class GovernanceRiskScore(Base):
     factors = Column(JSON, default=dict, nullable=False)  # Risk factors breakdown
 
     # Metadata
-    calculated_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    calculated_at = Column(
+        DateTime, default=datetime.utcnow, nullable=False, index=True
+    )
     calculated_by = Column(String(50), nullable=False)  # User or system
     method = Column(String(50), nullable=False)  # scoring_method used
 
@@ -257,9 +271,15 @@ class GovernancePolicy(Base):
     description = Column(Text, nullable=True)
 
     # Policy configuration
-    status = Column(SQLEnum(PolicyStatus), nullable=False, index=True, default=PolicyStatus.DRAFT)
-    priority = Column(Integer, nullable=False, default=0, index=True)  # Higher = more important
-    applies_to = Column(JSON, default=list, nullable=False)  # List of asset types or IDs
+    status = Column(
+        SQLEnum(PolicyStatus), nullable=False, index=True, default=PolicyStatus.DRAFT
+    )
+    priority = Column(
+        Integer, nullable=False, default=0, index=True
+    )  # Higher = more important
+    applies_to = Column(
+        JSON, default=list, nullable=False
+    )  # List of asset types or IDs
 
     # Policy rules
     rules = Column(JSON, nullable=False)  # Policy rule definitions
@@ -270,7 +290,9 @@ class GovernancePolicy(Base):
     created_by = Column(String(50), nullable=False)
     tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
     tenant = relationship("Tenant", backref="governance_policies")
@@ -290,8 +312,12 @@ class GovernancePolicyEvaluation(Base):
     __tablename__ = "governance_policy_evaluations"
 
     id = Column(String(50), primary_key=True, index=True)
-    policy_id = Column(String(50), ForeignKey("governance_policies.id"), nullable=False, index=True)
-    asset_id = Column(String(50), ForeignKey("governance_assets.id"), nullable=False, index=True)
+    policy_id = Column(
+        String(50), ForeignKey("governance_policies.id"), nullable=False, index=True
+    )
+    asset_id = Column(
+        String(50), ForeignKey("governance_assets.id"), nullable=False, index=True
+    )
 
     # Evaluation result
     result = Column(String(20), nullable=False)  # allow, deny, warn
@@ -335,14 +361,18 @@ class GovernanceAuditEvent(Base):
     )
 
     id = Column(String(50), primary_key=True, index=True)
-    asset_id = Column(String(50), ForeignKey("governance_assets.id"), nullable=True, index=True)
+    asset_id = Column(
+        String(50), ForeignKey("governance_assets.id"), nullable=True, index=True
+    )
 
     # Event details
     event_type = Column(String(50), nullable=False, index=True)
     event_category = Column(
         String(50), nullable=False, index=True
     )  # access, modification, compliance, etc.
-    severity = Column(String(20), nullable=False, index=True)  # info, warning, error, critical
+    severity = Column(
+        String(20), nullable=False, index=True
+    )  # info, warning, error, critical
 
     # Actor information
     actor_id = Column(String(50), nullable=False, index=True)
@@ -383,10 +413,14 @@ class GovernanceApproval(Base):
     )
 
     id = Column(String(50), primary_key=True, index=True)
-    asset_id = Column(String(50), ForeignKey("governance_assets.id"), nullable=False, index=True)
+    asset_id = Column(
+        String(50), ForeignKey("governance_assets.id"), nullable=False, index=True
+    )
 
     # Request details
-    request_type = Column(String(50), nullable=False)  # deployment, modification, access, etc.
+    request_type = Column(
+        String(50), nullable=False
+    )  # deployment, modification, access, etc.
     requested_by = Column(String(50), nullable=False, index=True)
     requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -440,7 +474,9 @@ class GovernanceComplianceFinding(Base):
     )
 
     id = Column(String(50), primary_key=True, index=True)
-    asset_id = Column(String(50), ForeignKey("governance_assets.id"), nullable=False, index=True)
+    asset_id = Column(
+        String(50), ForeignKey("governance_assets.id"), nullable=False, index=True
+    )
 
     # Finding details
     check_type = Column(
@@ -520,7 +556,9 @@ class GovernanceAPIKey(Base):
 
     id = Column(String(50), primary_key=True, index=True)
     name = Column(String(255), nullable=False)
-    key_hash = Column(String(255), nullable=False, unique=True, index=True)  # Hashed key
+    key_hash = Column(
+        String(255), nullable=False, unique=True, index=True
+    )  # Hashed key
     key_prefix = Column(String(10), nullable=False)  # First 8 chars for identification
 
     # Permissions

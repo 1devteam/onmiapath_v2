@@ -100,6 +100,7 @@ class TestIsBlockedHost:
     def test_dns_failure_blocks_host(self):
         """If DNS resolution fails, the host must be blocked."""
         import socket
+
         with patch("socket.getaddrinfo", side_effect=socket.gaierror("NXDOMAIN")):
             assert _is_blocked_host("nonexistent.invalid") is True
 
@@ -123,7 +124,9 @@ class TestExtractCleanText:
         assert "Hello world" in result["content"]
 
     def test_strips_script_tags(self):
-        html = "<html><body><script>alert('xss')</script><p>Real content</p></body></html>"
+        html = (
+            "<html><body><script>alert('xss')</script><p>Real content</p></body></html>"
+        )
         result = _extract_clean_text(html, "https://example.com")
         assert "alert" not in result["content"]
         assert "Real content" in result["content"]
@@ -209,7 +212,9 @@ class TestWebPageReaderToolExecute:
             mock_gai.return_value = [(None, None, None, None, ("10.0.0.1", 0))]
             result = await tool.execute(url="http://internal.corp/secret")
         assert result["success"] is False
-        assert "private" in result["error"].lower() or "denied" in result["error"].lower()
+        assert (
+            "private" in result["error"].lower() or "denied" in result["error"].lower()
+        )
 
     @pytest.mark.asyncio
     async def test_rejects_blocked_domain(self):
@@ -233,8 +238,9 @@ class TestWebPageReaderToolExecute:
         )
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://example.com")
 
@@ -251,8 +257,9 @@ class TestWebPageReaderToolExecute:
         mock_resp = _make_mock_response(text=html)
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://example.com", max_chars=1000)
 
@@ -267,8 +274,9 @@ class TestWebPageReaderToolExecute:
         mock_resp = _make_mock_response(text="<html><body><p>Short</p></body></html>")
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             # Request more than the ceiling — should not raise
             result = await tool.execute(url="https://example.com", max_chars=999_999)
@@ -280,8 +288,9 @@ class TestWebPageReaderToolExecute:
         mock_resp = _make_mock_response(final_url="https://example.com/final")
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://example.com/redirect")
 
@@ -295,8 +304,9 @@ class TestWebPageReaderToolExecute:
         mock_resp = _make_mock_response(status_code=404)
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://example.com/missing")
 
@@ -308,8 +318,9 @@ class TestWebPageReaderToolExecute:
         mock_resp = _make_mock_response(status_code=500)
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://example.com/error")
 
@@ -324,8 +335,9 @@ class TestWebPageReaderToolExecute:
         )
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://example.com/doc.pdf")
 
@@ -342,8 +354,9 @@ class TestWebPageReaderToolExecute:
         ctx.__aenter__ = AsyncMock(return_value=mock_client)
         ctx.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://slow.example.com")
 
@@ -360,8 +373,9 @@ class TestWebPageReaderToolExecute:
         ctx.__aenter__ = AsyncMock(return_value=mock_client)
         ctx.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = await tool.execute(url="https://redirect-loop.example.com")
 
@@ -375,6 +389,7 @@ class TestWebPageReaderToolExecute:
 
     def test_tool_category_is_search(self, tool):
         from backend.agents.tools.tool_registry import ToolCategory
+
         assert tool.category == ToolCategory.SEARCH
 
     def test_description_mentions_workflow(self, tool):
@@ -396,8 +411,9 @@ class TestReadWebPageSync:
         )
         ctx = _make_async_client_context(mock_resp)
 
-        with patch("socket.getaddrinfo") as mock_gai, \
-             patch("httpx.AsyncClient", return_value=ctx):
+        with patch("socket.getaddrinfo") as mock_gai, patch(
+            "httpx.AsyncClient", return_value=ctx
+        ):
             mock_gai.return_value = [(None, None, None, None, ("93.184.216.34", 0))]
             result = read_web_page_sync("https://example.com")
 
@@ -419,11 +435,13 @@ class TestToolRegistryIntegration:
 
     def test_web_page_reader_is_registered(self):
         from backend.agents.tools.tool_registry import get_tool_registry
+
         registry = get_tool_registry()
         assert "web_page_reader" in registry.tools
 
     def test_web_page_reader_is_retrievable(self):
         from backend.agents.tools.tool_registry import get_tool_registry
+
         registry = get_tool_registry()
         tool = registry.get_tool("web_page_reader")
         assert tool is not None
@@ -431,6 +449,7 @@ class TestToolRegistryIntegration:
 
     def test_web_page_reader_in_search_category(self):
         from backend.agents.tools.tool_registry import ToolCategory, get_tool_registry
+
         registry = get_tool_registry()
         search_tools = registry.get_tools_by_category(ToolCategory.SEARCH)
         tool_names = [t.name for t in search_tools]

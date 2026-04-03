@@ -42,7 +42,9 @@ class LLMMetricsWrapper(BaseChatModel):
     model_name: str = Field(description="The model name")
 
     def __init__(self, llm: BaseChatModel, provider: str, model_name: str, **kwargs):
-        super().__init__(llm_instance=llm, provider=provider, model_name=model_name, **kwargs)
+        super().__init__(
+            llm_instance=llm, provider=provider, model_name=model_name, **kwargs
+        )
 
     def _generate(
         self,

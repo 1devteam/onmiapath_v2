@@ -65,9 +65,24 @@ USER_AGENT = (
 
 # HTML tags whose content is always stripped entirely (not just the tag)
 STRIP_TAGS = {
-    "script", "style", "noscript", "nav", "header", "footer",
-    "aside", "advertisement", "ads", "cookie-banner", "banner",
-    "iframe", "svg", "form", "button", "input", "select", "textarea",
+    "script",
+    "style",
+    "noscript",
+    "nav",
+    "header",
+    "footer",
+    "aside",
+    "advertisement",
+    "ads",
+    "cookie-banner",
+    "banner",
+    "iframe",
+    "svg",
+    "form",
+    "button",
+    "input",
+    "select",
+    "textarea",
 }
 
 # MIME types we will attempt to parse as HTML/text
@@ -85,9 +100,9 @@ _BLOCKED_NETWORKS = [
     ipaddress.ip_network("172.16.0.0/12"),
     ipaddress.ip_network("192.168.0.0/16"),
     ipaddress.ip_network("127.0.0.0/8"),
-    ipaddress.ip_network("169.254.0.0/16"),   # link-local
-    ipaddress.ip_network("::1/128"),           # IPv6 loopback
-    ipaddress.ip_network("fc00::/7"),          # IPv6 private
+    ipaddress.ip_network("169.254.0.0/16"),  # link-local
+    ipaddress.ip_network("::1/128"),  # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),  # IPv6 private
 ]
 
 
@@ -281,7 +296,11 @@ class WebPageReaderTool(BaseTool):
         """
         # --- Input validation ---
         if not url or not isinstance(url, str):
-            return {"success": False, "error": "url must be a non-empty string", "url": url}
+            return {
+                "success": False,
+                "error": "url must be a non-empty string",
+                "url": url,
+            }
 
         parsed = urlparse(url.strip())
         if parsed.scheme not in ("http", "https"):
@@ -345,7 +364,9 @@ class WebPageReaderTool(BaseTool):
                 }
 
             # --- Content-type check ---
-            content_type = response.headers.get("content-type", "").lower().split(";")[0].strip()
+            content_type = (
+                response.headers.get("content-type", "").lower().split(";")[0].strip()
+            )
             if content_type and content_type not in ACCEPTABLE_CONTENT_TYPES:
                 return {
                     "success": False,

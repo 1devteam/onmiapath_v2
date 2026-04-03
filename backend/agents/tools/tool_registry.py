@@ -194,7 +194,10 @@ Note: Only reads files in allowed directories."""
             abs_path = os.path.abspath(file_path)
 
             # Check if path is in allowed directories
-            allowed = any(abs_path.startswith(os.path.abspath(d)) for d in self.allowed_directories)
+            allowed = any(
+                abs_path.startswith(os.path.abspath(d))
+                for d in self.allowed_directories
+            )
 
             if not allowed:
                 return {
@@ -266,7 +269,10 @@ Note: Only writes to allowed directories."""
             abs_path = os.path.abspath(file_path)
 
             # Check if path is in allowed directories
-            allowed = any(abs_path.startswith(os.path.abspath(d)) for d in self.allowed_directories)
+            allowed = any(
+                abs_path.startswith(os.path.abspath(d))
+                for d in self.allowed_directories
+            )
 
             if not allowed:
                 return {
@@ -394,6 +400,7 @@ class ToolRegistry:
         # PlaywrightBrowserTool — optional, requires playwright
         try:
             from backend.integrations.tools.browser_tool import PlaywrightBrowserTool
+
             self.register_tool(PlaywrightBrowserTool())
         except ImportError:
             logger.info("PlaywrightBrowserTool skipped — playwright not installed")
@@ -403,6 +410,7 @@ class ToolRegistry:
         # TwitterTool — optional, requires tweepy
         try:
             from backend.integrations.tools.twitter_tool import TwitterTool
+
             self.register_tool(TwitterTool())
         except ImportError:
             logger.info("TwitterTool skipped — tweepy not installed")
@@ -412,6 +420,7 @@ class ToolRegistry:
         # RedditTool — optional, requires praw
         try:
             from backend.integrations.tools.reddit_tool import RedditTool
+
             self.register_tool(RedditTool())
         except ImportError:
             logger.info("RedditTool skipped — praw not installed")

@@ -27,6 +27,7 @@ def _get_event_store():
     """Lazy import to avoid circular dependency at module load time."""
     try:
         from backend.main import get_event_store
+
         return get_event_store()
     except Exception:
         return None
@@ -50,8 +51,12 @@ class AgentCreate(BaseModel):
     model: str = Field(default="gpt-4", description="LLM model")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="Temperature")
     system_prompt: Optional[str] = Field(None, description="System prompt")
-    capabilities: List[str] = Field(default_factory=list, description="Agent capabilities")
-    config: Dict[str, Any] = Field(default_factory=dict, description="Additional configuration")
+    capabilities: List[str] = Field(
+        default_factory=list, description="Agent capabilities"
+    )
+    config: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional configuration"
+    )
 
 
 class AgentUpdate(BaseModel):
@@ -219,9 +224,13 @@ async def list_agents(
     status_filter: Optional[AgentStatus] = Query(
         None, alias="status", description="Filter by status"
     ),
-    type_filter: Optional[AgentType] = Query(None, alias="type", description="Filter by type"),
+    type_filter: Optional[AgentType] = Query(
+        None, alias="type", description="Filter by type"
+    ),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Max number of records to return"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Max number of records to return"
+    ),
 ):
     """
     List all agents
@@ -236,12 +245,16 @@ async def list_agents(
     # Apply additional filters
     if status_filter:
         status_value = (
-            status_filter.value if isinstance(status_filter, AgentStatus) else status_filter
+            status_filter.value
+            if isinstance(status_filter, AgentStatus)
+            else status_filter
         )
         query = query.filter(Agent.status == status_value)
 
     if type_filter:
-        type_value = type_filter.value if isinstance(type_filter, AgentType) else type_filter
+        type_value = (
+            type_filter.value if isinstance(type_filter, AgentType) else type_filter
+        )
         query = query.filter(Agent.type == type_value)
 
     # Apply pagination
@@ -301,7 +314,11 @@ async def update_agent(
     if agent.name is not None:
         agent_data.name = agent.name
     if agent.status is not None:
-        new_status = agent.status.value if isinstance(agent.status, AgentStatus) else agent.status
+        new_status = (
+            agent.status.value
+            if isinstance(agent.status, AgentStatus)
+            else agent.status
+        )
         agent_data.status = new_status
         # Record in Prometheus
         from backend.integrations.observability.prometheus_metrics import get_metrics
@@ -502,8 +519,12 @@ async def deactivate_agent(
 class SpecializedAgentExecuteRequest(BaseModel):
     """Request schema for executing a specialized agent"""
 
-    agent_type: str = Field(..., description="Agent type: researcher, analyst, or developer")
-    task: Dict[str, Any] = Field(..., description="Task parameters specific to agent type")
+    agent_type: str = Field(
+        ..., description="Agent type: researcher, analyst, or developer"
+    )
+    task: Dict[str, Any] = Field(
+        ..., description="Task parameters specific to agent type"
+    )
 
     class Config:
         json_schema_extra = {
@@ -688,7 +709,9 @@ async def list_available_tools(current_user: dict = Depends(get_current_user)):
 @router.post("/research", response_model=SpecializedAgentExecuteResponse)
 async def execute_researcher_agent(
     query: str = Query(..., description="Research query"),
-    depth: str = Query(default="standard", description="Research depth: standard or deep"),
+    depth: str = Query(
+        default="standard", description="Research depth: standard or deep"
+    ),
     current_user: dict = Depends(get_current_user),
 ):
     """
@@ -760,7 +783,9 @@ async def execute_analyst_agent(
 
 @router.post("/develop", response_model=SpecializedAgentExecuteResponse)
 async def execute_developer_agent(
-    specification: str = Body(..., description="Code specification or task description"),
+    specification: str = Body(
+        ..., description="Code specification or task description"
+    ),
     task_type: str = Body(
         default="generate", description="Task type: generate, debug, review, test"
     ),
@@ -800,6 +825,7 @@ async def execute_developer_agent(
 # ============================================================================
 # Agent History — Event Sourcing Read Endpoint
 # ============================================================================
+
 
 @router.get("/{agent_id}/history", response_model=Dict[str, Any])
 async def get_agent_history(
@@ -861,8 +887,7 @@ async def get_agent_history(
             event_type="mission.started",
         )
         agent_mission_events = [
-            e for e in mission_events
-            if e.data.get("agent_id") == agent_id
+            e for e in mission_events if e.data.get("agent_id") == agent_id
         ]
 
         # Combine and sort chronologically
@@ -870,7 +895,7 @@ async def get_agent_history(
         all_events.sort(key=lambda e: e.timestamp)
 
         total = len(all_events)
-        paginated = all_events[offset: offset + limit]
+        paginated = all_events[offset : offset + limit]
 
         serialised = [
             {

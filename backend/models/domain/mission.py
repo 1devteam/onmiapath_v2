@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
+
 class MissionStatus(str, Enum):
     PENDING = "pending"
     PLANNING = "planning"
@@ -10,6 +11,7 @@ class MissionStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+
 
 class Mission(BaseModel):
     id: str
