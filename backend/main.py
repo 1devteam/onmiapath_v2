@@ -13,7 +13,7 @@ import logging
 from backend.config.settings import Settings
 
 # Import API routes
-from backend.api.routes import economy, missions_v45, auth
+from backend.api.routes import economy, missions_v45, auth, metrics, performance
 
 # Configure logging
 logging.basicConfig(
@@ -69,7 +69,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.DEBUG else ["https://yourdomain.com"],
+    allow_origins=settings.CORS_ORIGINS if not settings.DEBUG else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -122,9 +122,10 @@ async def root():
 
 # Include API routers
 app.include_router(economy.router)
-
 app.include_router(missions_v45.router)
 app.include_router(auth.router)
+app.include_router(metrics.router)
+app.include_router(performance.router)
 
 
 # Startup message

@@ -11,10 +11,10 @@ from backend.security.auth_utils import (
 )
 from datetime import timedelta
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/auth/register", response_model=User, tags=["auth"])
+@router.post("/register", response_model=User)
 async def register_user(user: UserCreate):
     existing_user = await get_user_from_db(user.email)
     if existing_user:
@@ -27,7 +27,7 @@ async def register_user(user: UserCreate):
     return User(**user_in_db.dict())
 
 
-@router.post("/auth/token", tags=["auth"])
+@router.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -38,7 +38,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
-        data={"sub": user.email, "tenant_id": user.tenant_id},
+        data={
+            "sub": user.email,
+            "user_id": user.id,
+            "tenant_id": user.tenant_id,
+            "role": user.role.value,
+        },
         expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}

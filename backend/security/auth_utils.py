@@ -12,6 +12,7 @@ from backend.models.domain.user import User, UserInDB, UserRole
 settings = Settings()
 logger = logging.getLogger(__name__)
 
+# passlib context for password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # In-memory store for users for personal build simplification
@@ -20,15 +21,18 @@ in_memory_users_db: Dict[str, Dict[str, Any]] = {}
 
 
 def get_password_hash(password: str) -> str:
+    """Hash a plain text password."""
     logger.info(f"Hashing password of length {len(password)} characters.")
     return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain text password against a hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 
 async def get_user_from_db(email: str) -> Optional[UserInDB]:
+    """Retrieve a user from the in-memory database by email."""
     user_data = in_memory_users_db.get(email)
     if user_data:
         return UserInDB(**user_data)
@@ -36,6 +40,7 @@ async def get_user_from_db(email: str) -> Optional[UserInDB]:
 
 
 async def create_user_in_db(email: str, hashed_password: str) -> UserInDB:
+    """Create a new user in the in-memory database."""
     user_id = f"user-{len(in_memory_users_db) + 1}"
     tenant_id = (
         f"tenant-{len(in_memory_users_db) + 1}"  # Each user gets their own tenant for simplicity
@@ -57,13 +62,16 @@ async def create_user_in_db(email: str, hashed_password: str) -> UserInDB:
 
 
 async def authenticate_user(email: str, password: str) -> Optional[User]:
+    """Authenticate a user and return the User model if successful."""
     user_in_db = await get_user_from_db(email)
     if not user_in_db or not verify_password(password, user_in_db.hashed_password):
         return None
+    # Use model_dump() for Pydantic v2 compatibility if needed, or .dict() for v1
     return User(**user_in_db.dict())
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -74,7 +82,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-def decode_access_token(token: str):
+def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
+    """Decode and validate a JWT access token."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
@@ -83,6 +92,10 @@ def decode_access_token(token: str):
 
 
 async def get_current_user(token: str = Query(...)) -> User:
+    """
+    FastAPI dependency to get the current authenticated user from a query parameter.
+    Mainly used for simplified personal builds and testing.
+    """
     # Bypass for local testing/personal build
     if token == "admin-token":
         return User(
@@ -92,6 +105,7 @@ async def get_current_user(token: str = Query(...)) -> User:
             tenant_id="default-tenant",
             role=UserRole.ADMIN,
             is_active=True,
+            created_at=datetime.utcnow(),
         )
 
     payload = decode_access_token(token)
@@ -104,6 +118,8 @@ async def get_current_user(token: str = Query(...)) -> User:
 
     user_email: str = payload.get("sub")
     tenant_id: str = payload.get("tenant_id")
+    user_id: str = payload.get("user_id") or f"user-{user_email}"
+    role: str = payload.get("role") or UserRole.ADMIN.value
 
     if user_email is None or tenant_id is None:
         raise HTTPException(
@@ -111,12 +127,13 @@ async def get_current_user(token: str = Query(...)) -> User:
             detail="Token missing required fields",
         )
 
-    # For personal build, we don't re-fetch from DB, just reconstruct from token
-    # In a production system, you would fetch the user from the database here
+    # For personal build, we reconstruct from token instead of DB fetch
     return User(
-        id=f"user-{user_email}",
+        id=user_id,
         email=user_email,
         username=user_email.split("@")[0],
         tenant_id=tenant_id,
-        role=UserRole.ADMIN,
+        role=UserRole(role),
+        is_active=True,
+        created_at=datetime.utcnow(),
     )

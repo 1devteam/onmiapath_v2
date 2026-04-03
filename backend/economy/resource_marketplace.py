@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import Dict, List, Any
 from datetime import datetime
 import redis.asyncio as redis
 
@@ -24,9 +24,16 @@ class ResourceMarketplace:
             logger.error(f"ResourceMarketplace failed to connect to Redis: {e}")
             raise
 
-    async def get_balance(self, tenant_id: str, agent_id: str) -> float:
+    async def get_balance(self, tenant_id: str, agent_id: str) -> Dict[str, Any]:
         """Always returns a very large balance, effectively infinite credits."""
-        return 1_000_000_000.0  # Infinite credits for personal use
+        return {
+            "agent_id": agent_id,
+            "type": "unknown",
+            "balance": 1_000_000_000.0,
+            "total_earned": 0.0,
+            "total_spent": 0.0,
+            "last_updated": datetime.utcnow(),
+        }
 
     async def charge(
         self,
@@ -86,9 +93,18 @@ class ResourceMarketplace:
         )
         return True
 
-    async def get_tenant_balances(self, tenant_id: str) -> Dict[str, float]:
+    async def get_tenant_balances(self, tenant_id: str) -> Dict[str, Dict[str, Any]]:
         """Returns a dummy balance for all agents in the tenant."""
-        return {"dummy_agent": 1_000_000_000.0}
+        return {
+            "dummy_agent": {
+                "agent_id": "dummy_agent",
+                "type": "unknown",
+                "balance": 1_000_000_000.0,
+                "total_earned": 0.0,
+                "total_spent": 0.0,
+                "last_updated": datetime.utcnow(),
+            }
+        }
 
     async def record_transaction(
         self,
