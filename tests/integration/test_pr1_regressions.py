@@ -35,6 +35,28 @@ class TestPR1Regressions:
         assert data["total_earned"] == 0.0
         assert data["total_spent"] == 0.0
 
+    def test_balance_endpoint_rejects_incomplete_dict_payload(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        async def mock_get_balance(tenant_id: str, agent_id: str):
+            return {
+                "agent_id": agent_id,
+                "type": "planner",
+                "balance": 100.0,
+                # total_earned intentionally missing
+                "total_spent": 25.0,
+            }
+
+        monkeypatch.setattr(economy.marketplace, "get_balance", mock_get_balance)
+
+        response = client.get(
+            "/api/v1/economy/balance/agent-incomplete",
+            headers={"Authorization": "Bearer admin-token"},
+        )
+
+        assert response.status_code == 500
+        assert "missing required field(s): total_earned" in response.json()["detail"]
+
     def test_metrics_and_performance_routes_are_registered(self, client: TestClient):
         metrics_response = client.get("/metrics")
         performance_response = client.get("/api/v1/performance/agents")

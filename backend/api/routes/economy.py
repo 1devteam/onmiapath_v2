@@ -24,12 +24,25 @@ def _normalize_balance_payload(agent_id: str, raw_balance) -> dict:
     Supports both structured dict payloads and legacy float balances.
     """
     if isinstance(raw_balance, dict):
+        required_financial_fields = {"balance", "total_earned", "total_spent"}
+        missing_fields = sorted(
+            field for field in required_financial_fields if field not in raw_balance
+        )
+        if missing_fields:
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Invalid marketplace balance payload: "
+                    f"missing required field(s): {', '.join(missing_fields)}"
+                ),
+            )
+
         return {
             "agent_id": raw_balance.get("agent_id", agent_id),
             "type": raw_balance.get("type", raw_balance.get("agent_type", "unknown")),
-            "balance": raw_balance.get("balance", 0.0),
-            "total_earned": raw_balance.get("total_earned", 0.0),
-            "total_spent": raw_balance.get("total_spent", 0.0),
+            "balance": raw_balance["balance"],
+            "total_earned": raw_balance["total_earned"],
+            "total_spent": raw_balance["total_spent"],
             "last_updated": raw_balance.get("last_updated", datetime.utcnow()),
         }
 
