@@ -27,13 +27,9 @@ class MissionExecutor:
         return f"tenant_missions:{tenant_id}"
 
     async def _save_mission_state(self, mission_id: str, state: dict):
-        """Save mission state to Redis and add to tenant mission list."""
+        """Save mission state to Redis and add to tenant mission list atomically."""
         mission_key = self._get_mission_key(mission_id)
         tenant_id = state.get("tenant_id")
-
-        # Add to tenant mission list if not already there
-        if tenant_id:
-            await self._redis.sadd(self._get_tenant_missions_key(tenant_id), mission_id)
 
         # Serialize complex types
         state_to_save = state.copy()
@@ -43,9 +39,19 @@ class MissionExecutor:
             elif isinstance(v, datetime):
                 state_to_save[k] = v.isoformat()
 
-        await self._redis.hset(mission_key, mapping=state_to_save)
-        # Set expiration for mission state (e.g., 30 days)
-        await self._redis.expire(mission_key, 60 * 60 * 24 * 30)
+        # Use Redis transaction for atomic updates
+        async with self._redis.pipeline(transaction=True) as pipe:
+            # Add to tenant mission list if not already there
+            if tenant_id:
+                await pipe.sadd(self._get_tenant_missions_key(tenant_id), mission_id)
+            
+            # Save state
+            await pipe.hset(mission_key, mapping=state_to_save)
+            
+            # Set expiration for mission state (30 days)
+            await pipe.expire(mission_key, 60 * 60 * 24 * 30)
+            
+            await pipe.execute()
 
     async def get_mission_state(self, mission_id: str) -> Optional[dict]:
         """Retrieve mission state from Redis."""

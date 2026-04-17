@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
     XAI_API_KEY: str = ""  # Grok
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_BASE_URL: str = "http://ollama:11434"
 
     # Model Selection (per agent type)
     COMMANDER_PROVIDER: str = "openai"
@@ -51,12 +51,12 @@ class Settings(BaseSettings):
     API_KEY_LENGTH: int = 64
 
     # Database
-    DATABASE_URL: str = "postgresql://omnipath:omnipath@localhost:5432/omnipath"
+    DATABASE_URL: str = "postgresql://omnipath:omnipath@db:5432/omnipath"
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
 
     # Redis (Event Bus & Caching)
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://redis:6379/0"
     REDIS_MAX_CONNECTIONS: int = 50
 
     # Rate Limiting
@@ -87,6 +87,21 @@ class Settings(BaseSettings):
         """Ensure environment is valid."""
         if v not in ["development", "staging", "production"]:
             raise ValueError("Invalid environment")
+        return v
+
+    @validator("DATABASE_URL", "REDIS_URL", "OLLAMA_BASE_URL")
+    def validate_production_urls(cls, v, values):
+        """Ensure critical URLs do not point to localhost in production."""
+        if values.get("ENVIRONMENT") == "production":
+            localhost_patterns = ["localhost", "127.0.0.1", "0.0.0.0"]
+            if any(pattern in v for pattern in localhost_patterns):
+                # We allow localhost for personal production builds if explicitly desired,
+                # but for Obex's Hetzner deployment, we should at least log a warning or enforce.
+                # Given the prompt's "fail-fast" requirement:
+                raise ValueError(
+                    f"Production safety violation: {v} points to localhost. "
+                    "Production services must use external/service URLs."
+                )
         return v
 
     class Config:

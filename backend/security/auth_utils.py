@@ -119,8 +119,16 @@ async def get_current_user(
 
     token = credentials.credentials
 
-    # Bypass for local testing/personal build
+    # Bypass for local testing/personal build (DISABLED in production)
     if token == "admin-token":
+        if settings.ENVIRONMENT == "production":
+            logger.warning("Attempted admin-token bypass in production environment. Blocked.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Administrative bypass token is disabled in production.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
         return User(
             id="admin-id",
             email=ADMIN_BYPASS_USER_EMAIL,

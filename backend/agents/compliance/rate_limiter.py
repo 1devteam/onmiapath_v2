@@ -120,9 +120,9 @@ class RedisRateLimiter(RateLimiter):
             getattr(redis_client.zadd, "__call__", None)
         )
 
-    def check_rate_limit(self, key: str, limit: int, window_seconds: int) -> tuple[bool, int, int]:
+    async def check_rate_limit(self, key: str, limit: int, window_seconds: int) -> tuple[bool, int, int]:
         """
-        Check if rate limit is exceeded using Redis sorted set.
+        Check if rate limit is exceeded using Redis sorted set (Async).
 
         Uses sorted set with timestamps as scores for sliding window.
 
@@ -139,16 +139,22 @@ class RedisRateLimiter(RateLimiter):
         redis_key = f"ratelimit:{key}"
 
         try:
-            # Remove old entries outside the window
-            self.redis.zremrangebyscore(redis_key, 0, window_start)
-
-            # Count current requests in window
-            current_count = self.redis.zcard(redis_key)
+            # Use pipeline for atomic operations
+            async with self.redis.pipeline(transaction=True) as pipe:
+                # Remove old entries outside the window
+                await pipe.zremrangebyscore(redis_key, 0, window_start)
+                # Count current requests in window
+                await pipe.zcard(redis_key)
+                # Get oldest entry for reset time calculation
+                await pipe.zrange(redis_key, 0, 0, withscores=True)
+                
+                results = await pipe.execute()
+                
+            current_count = results[1]
+            oldest = results[2]
 
             # Check if limit exceeded
             if current_count >= limit:
-                # Get oldest timestamp to calculate reset time
-                oldest = self.redis.zrange(redis_key, 0, 0, withscores=True)
                 if oldest:
                     oldest_timestamp = oldest[0][1]
                     reset_seconds = int(oldest_timestamp + window_seconds - now) + 1
@@ -157,12 +163,12 @@ class RedisRateLimiter(RateLimiter):
 
                 return False, 0, reset_seconds
 
-            # Add current request
-            request_id = f"{now}:{id(self)}"  # Unique request ID
-            self.redis.zadd(redis_key, {request_id: now})
-
-            # Set expiration on the key
-            self.redis.expire(redis_key, window_seconds + 1)
+            # Add current request and set expiration
+            request_id = f"{now}:{id(self)}"
+            async with self.redis.pipeline(transaction=True) as pipe:
+                await pipe.zadd(redis_key, {request_id: now})
+                await pipe.expire(redis_key, window_seconds + 1)
+                await pipe.execute()
 
             remaining = limit - (current_count + 1)
             reset_seconds = window_seconds
@@ -171,8 +177,8 @@ class RedisRateLimiter(RateLimiter):
 
         except Exception as e:
             # If Redis fails, allow the request (fail open)
-            # Log the error in production
-            print(f"Redis rate limiter error: {e}")
+            import logging
+            logging.getLogger(__name__).error(f"Redis rate limiter error: {e}")
             return True, limit - 1, window_seconds
 
     def reset(self, key: str) -> None:
@@ -216,7 +222,7 @@ class ComplianceRateLimiter:
         """
         self.limiter = limiter or InMemoryRateLimiter()
 
-    def check_agent_tool_rate_limit(
+    async def check_agent_tool_rate_limit(
         self,
         agent_id: str,
         agent_type: str,
@@ -248,9 +254,15 @@ class ComplianceRateLimiter:
         key = f"agent:{agent_id}:tool:{tool_name}"
 
         # Check rate limit
-        allowed, remaining, reset_seconds = self.limiter.check_rate_limit(
-            key=key, limit=limit, window_seconds=window_seconds
-        )
+        import asyncio
+        if asyncio.iscoroutinefunction(self.limiter.check_rate_limit):
+            allowed, remaining, reset_seconds = await self.limiter.check_rate_limit(
+                key=key, limit=limit, window_seconds=window_seconds
+            )
+        else:
+            allowed, remaining, reset_seconds = self.limiter.check_rate_limit(
+                key=key, limit=limit, window_seconds=window_seconds
+            )
 
         if not allowed:
             reason = (
@@ -319,13 +331,15 @@ _global_rate_limiter: Optional[ComplianceRateLimiter] = None
 def get_rate_limiter() -> ComplianceRateLimiter:
     """
     Get global rate limiter instance.
-
-    Returns:
-        ComplianceRateLimiter instance
+    Uses Redis if REDIS_URL is configured in settings.
     """
     global _global_rate_limiter
     if _global_rate_limiter is None:
-        _global_rate_limiter = ComplianceRateLimiter()
+        from backend.config.settings import settings
+        if settings.REDIS_URL:
+            _global_rate_limiter = init_redis_rate_limiter(settings.REDIS_URL)
+        else:
+            _global_rate_limiter = ComplianceRateLimiter()
     return _global_rate_limiter
 
 
@@ -351,7 +365,7 @@ def init_redis_rate_limiter(redis_url: str) -> ComplianceRateLimiter:
         ComplianceRateLimiter with Redis backend
     """
     try:
-        import redis
+        import redis.asyncio as redis
 
         redis_client = redis.from_url(redis_url, decode_responses=True)
         redis_limiter = RedisRateLimiter(redis_client)

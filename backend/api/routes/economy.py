@@ -8,11 +8,12 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-from backend.security.auth_utils import get_current_user, User
+import logging
+from backend.security.auth_utils import User, get_current_user
 from backend.economy.resource_marketplace import ResourceMarketplace
 
-
 router = APIRouter(prefix="/api/v1/economy", tags=["economy"])
+logger = logging.getLogger(__name__)
 
 marketplace = ResourceMarketplace()
 
@@ -30,14 +31,13 @@ def _normalize_balance_payload(agent_id: str, raw_balance) -> dict:
         missing_keys = [k for k in required_keys if k not in raw_balance]
 
         if missing_keys:
-            logger_name = "backend.api.routes.economy"
-            import logging
-
-            logging.getLogger(logger_name).error(
-                f"Incomplete balance dict for agent {agent_id}: missing {missing_keys}"
-            )
+            logger.error(f"Incomplete balance dict for agent {agent_id}: missing {missing_keys}")
             raise HTTPException(
-                status_code=500, detail=f"Incomplete balance data for agent {agent_id}"
+                status_code=500,
+                detail=(
+                    f"Invalid marketplace balance payload for agent {agent_id}: "
+                    f"missing required field(s): {', '.join(missing_keys)}"
+                ),
             )
 
         return {
@@ -184,9 +184,9 @@ async def get_economy_stats(current_user: User = Depends(get_current_user)):
         tenant_id=current_user.tenant_id,
         total_agents=stats["total_agents"],
         total_balance=stats["total_balance"],
-        total_spent_today=stats["total_spent_today"],
-        total_earned_today=stats["total_earned_today"],
-        average_cost_per_mission=stats["average_cost_per_mission"],
+        total_spent_today=stats.get("total_spent_today", stats.get("total_spent_all_time", 0.0)),
+        total_earned_today=stats.get("total_earned_today", stats.get("total_earned_all_time", 0.0)),
+        average_cost_per_mission=stats.get("average_cost_per_mission", 0.0),
         most_expensive_agent=stats.get("most_expensive_agent"),
         most_profitable_agent=stats.get("most_profitable_agent"),
     )

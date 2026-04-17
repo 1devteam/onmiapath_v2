@@ -263,11 +263,21 @@ class CostLimitRule:
         "llm_call": 0.10,
     }
 
-    def __init__(self):
-        """Initialize cost tracker."""
-        self.cost_tracker: Dict[str, float] = {}
+    def __init__(self, redis_url: str = "redis://localhost:6379"):
+        """Initialize Redis connection for cost tracking."""
+        import redis.asyncio as redis
+        from datetime import datetime
+        import logging
+        self.redis_client = redis.from_url(redis_url, decode_responses=True)
+        logging.getLogger(__name__).info(f"CostLimitRule initialized with Redis at {redis_url}")
 
-    def check(self, context: Dict[str, Any]) -> ComplianceResult:
+    def _get_cost_key(self, agent_id: str) -> str:
+        # Daily cost key for agents
+        from datetime import datetime
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        return f"compliance:cost:{today}:{agent_id}"
+
+    async def check(self, context: Dict[str, Any]) -> ComplianceResult:
         """
         Check if cost limit exceeded.
 
@@ -294,8 +304,11 @@ class CostLimitRule:
         # Get cost limit for agent type
         cost_limit = self.AGENT_COST_LIMITS.get(agent_type, 5.0)  # Default $5
 
-        # Check current cost
-        current_cost = self.cost_tracker.get(agent_id, 0.0)
+        # Check current cost in Redis
+        key = self._get_cost_key(agent_id)
+        current_cost_str = await self.redis_client.get(key)
+        current_cost = float(current_cost_str) if current_cost_str else 0.0
+        
         new_cost = current_cost + estimated_cost
 
         if new_cost > cost_limit:
@@ -304,12 +317,15 @@ class CostLimitRule:
                 reason=f"Cost limit exceeded for agent '{agent_id}' (${new_cost:.2f}/${cost_limit:.2f})",  # noqa: E501
             )
 
-        # Increment cost
-        self.cost_tracker[agent_id] = new_cost
+        # Increment cost in Redis with 24-hour TTL
+        async with self.redis_client.pipeline(transaction=True) as pipe:
+            await pipe.incrbyfloat(key, estimated_cost)
+            await pipe.expire(key, 60 * 60 * 24) # 24h TTL
+            await pipe.execute()
 
         return ComplianceResult.allow(self.name)
 
-    def reset(self, agent_id: str = None) -> None:
+    async def reset(self, agent_id: str = None) -> None:
         """
         Reset cost counters.
 
@@ -324,13 +340,19 @@ class CostLimitRule:
             rule.reset(agent_id="agent_123")
         """
         if agent_id is None:
-            # Reset all
-            self.cost_tracker.clear()
+            # Note: Broad delete is risky in production; ideally use a pattern-based approach or keyspace scan
+            from datetime import datetime
+            today = datetime.utcnow().strftime("%Y-%m-%d")
+            pattern = f"compliance:cost:{today}:*"
+            keys = await self.redis_client.keys(pattern)
+            if keys:
+                await self.redis_client.delete(*keys)
         else:
             # Reset specific agent
-            self.cost_tracker.pop(agent_id, None)
+            key = self._get_cost_key(agent_id)
+            await self.redis_client.delete(key)
 
-    def get_cost(self, agent_id: str) -> float:
+    async def get_cost(self, agent_id: str) -> float:
         """
         Get current cost for agent.
 
@@ -340,7 +362,9 @@ class CostLimitRule:
         Returns:
             Current cumulative cost in USD
         """
-        return self.cost_tracker.get(agent_id, 0.0)
+        key = self._get_cost_key(agent_id)
+        current_cost_str = await self.redis_client.get(key)
+        return float(current_cost_str) if current_cost_str else 0.0
 
 
 class DataPrivacyRule:

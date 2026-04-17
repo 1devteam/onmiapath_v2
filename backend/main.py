@@ -49,6 +49,17 @@ async def lifespan(app: FastAPI):
     if settings.OLLAMA_BASE_URL:
         logger.info(f"  - Ollama: ✓ ({settings.OLLAMA_BASE_URL})")
 
+    # Initialize Redis-based systems
+    if settings.REDIS_URL:
+        from backend.api.routes.economy import marketplace
+        try:
+            await marketplace.connect()
+            logger.info(f"Redis-based economy system connected at {settings.REDIS_URL}")
+        except Exception as e:
+            logger.error(f"Failed to connect to Redis economy system: {e}")
+            if settings.ENVIRONMENT == "production":
+                raise
+
     yield
 
     # Shutdown
