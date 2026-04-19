@@ -2,7 +2,7 @@
 
 # Omnipath V2: Stabilized Multi-Agent AI Platform
 
-**Omnipath V2** is a production-ready, multi-agent AI orchestration platform designed for building scalable, observable, and intelligent autonomous systems. This version has been rigorously stabilized under the **Pride Protocol**, ensuring robust authentication, durable persistence, and high-performance operations. It features a refined architecture with Redis Streams for eventing and a comprehensive suite of observability tools.
+**Omnipath V2** is a production-ready, multi-agent AI orchestration platform designed for building scalable, observable, and intelligent autonomous systems. This version (`7.5.0-prod`) has been rigorously stabilized under the **Pride Protocol**, ensuring robust authentication, durable persistence, and high-performance operations. It features a refined architecture with Redis for persistent economy and compliance, atomic mission state management, and a comprehensive suite of observability tools.
 
 ![Architecture Diagram](https://private-us-east-1.manuscdn.com/sessionFile/k7GU7hUSA7cxeqZ3oAae2R/sandbox/U1KgzKUZTeTt9PlDSbDP4J-images_1769627043304_na1fn_L2hvbWUvdWJ1bnR1L29tbmlwYXRoLXYzL2RvY3MvYXJjaGl0ZWN0dXJl.png?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvazdHVTdoVVNBN2N4ZXFaM29BYWUyUi9zYW5kYm94L1UxS2d6S1VaVGVUdDlQbERTYkRQNEotaW1hZ2VzXzE3Njk2MjcwNDMzMDRfbmExZm5fTDJodmJXVXZkV0oxYm5SMUwyOXRibWx3WVhSb0xYWXpMMlJ2WTNNdllYSmphR2wwWldOMGRYSmwucG5nIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=KpnaMayI4qrYPD08MhaDmG0AqDIdt6h8gJvWS8VY-CRxu1vCHyigz4tqh31HHKSG6NhnELlTEVabbiY-ZAB4jP3eYyVJUV71AEI2u77xHnCzXxh99QH6D5M4Vip~2htbZ59~WIeKqlAN83gYdhGQDCg3JHf-ZyVYC5VZOuAKT0f6l~Z-0GZRkfqS1RMbNmSBoHxx5HH5YMJnkoOuvxdqkdHlrNO1nSOdpuEb69iKw6VWx71Kk-VHjpDPruuoHDLCJje8IFFz7z0ifhoi--PXfAX~ta7~h-idDtWG6pa2ZigDLyjycIiR0LoBBI-QuyeS2NQQ6GPbm~tM16YDsxRDKA__)
 
@@ -11,6 +11,8 @@
 ## ✨ Key Features in V2
 
 -   **🚀 Event-Driven Architecture**: Powered by **Redis Streams**, the core enables massive scalability and resilience. Agents communicate asynchronously, eliminating bottlenecks and allowing for independent scaling.
+-   **💰 Production-Grade Economy**: The agent economy now features **Redis-persistent balance and transaction management**, replacing mock logic with durable, atomic operations for reliable credit distribution and charging.
+-   **🛡️ Enhanced Compliance & Rate Limiting**: Implemented **Redis-backed distributed rate limiting and cost tracking** for agents, ensuring consistent policy enforcement and preventing budget overruns across the platform.
 
 -   **💾 Event Sourcing & CQRS**: Agent state is now an immutable log of events, providing a perfect audit trail and enabling time-travel debugging. CQRS separates read and write concerns for optimal performance.
 
@@ -42,7 +44,7 @@
 
 ## 🚀 Quick Start
 
-This project uses Docker Compose to set up a complete local development environment, including all necessary services.
+This project uses Docker Compose to set up a complete local development environment, including all necessary services. **Note: For production deployments, ensure `REDIS_URL`, `DATABASE_URL`, and `OLLAMA_BASE_URL` in `.env` point to external, non-localhost services.**
 
 ### Prerequisites
 
@@ -82,8 +84,9 @@ docker-compose up --build -d
 
 This will start:
 -   `omnipath-backend` on port `8000`
--   `postgres` on port `5432`
+-   `db` (PostgreSQL) on port `5432`
 -   `redis` on port `6379`
+-   `ollama` (if enabled) on port `11434`
 
 -   `jaeger` on port `16686` (UI)
 -   `prometheus` on port `9090`
