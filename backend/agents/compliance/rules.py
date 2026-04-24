@@ -191,12 +191,21 @@ class RateLimitRule:
         agent_type = context.get("agent_type", "unknown")
         tool_name = context.get("tool_name", "unknown")
 
-        # Check tool-specific rate limit
-        allowed, reason = self.rate_limiter.check_agent_tool_rate_limit(
-            agent_id=agent_id,
-            agent_type=agent_type,
-            tool_name=tool_name,
-            rate_limits=self.RATE_LIMITS,
+        # Check tool-specific rate limit (use sync wrapper for testing)
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        allowed, reason = loop.run_until_complete(
+            self.rate_limiter.check_agent_tool_rate_limit(
+                agent_id=agent_id,
+                agent_type=agent_type,
+                tool_name=tool_name,
+                rate_limits=self.RATE_LIMITS,
+            )
         )
 
         if not allowed:
