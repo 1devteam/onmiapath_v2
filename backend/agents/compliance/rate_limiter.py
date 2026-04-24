@@ -274,7 +274,7 @@ class ComplianceRateLimiter:
 
         return True, None
 
-    def check_agent_global_rate_limit(
+    async def check_agent_global_rate_limit(
         self, agent_id: str, agent_type: str, global_limit: int
     ) -> tuple[bool, Optional[str]]:
         """
@@ -291,9 +291,15 @@ class ComplianceRateLimiter:
         window_seconds = 60  # 1 minute window
         key = f"agent:{agent_id}:global"
 
-        allowed, remaining, reset_seconds = self.limiter.check_rate_limit(
-            key=key, limit=global_limit, window_seconds=window_seconds
-        )
+        import asyncio
+        if asyncio.iscoroutinefunction(self.limiter.check_rate_limit):
+            allowed, remaining, reset_seconds = await self.limiter.check_rate_limit(
+                key=key, limit=global_limit, window_seconds=window_seconds
+            )
+        else:
+            allowed, remaining, reset_seconds = self.limiter.check_rate_limit(
+                key=key, limit=global_limit, window_seconds=window_seconds
+            )
 
         if not allowed:
             reason = (

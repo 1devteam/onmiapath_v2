@@ -223,8 +223,8 @@ class CostLimitRule:
     Tracks cumulative costs and blocks when budget exceeded.
     Prevents runaway spending from LLM/API calls.
 
-    Note: This is a simple in-memory implementation.
-    For production, use Redis or database for persistence.
+    Production-grade Redis-persistent implementation.
+    Tracks cumulative costs and blocks when budget exceeded.
 
     Example:
         rule = CostLimitRule()
@@ -263,13 +263,15 @@ class CostLimitRule:
         "llm_call": 0.10,
     }
 
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, redis_url: Optional[str] = None):
         """Initialize Redis connection for cost tracking."""
         import redis.asyncio as redis
-        from datetime import datetime
         import logging
-        self.redis_client = redis.from_url(redis_url, decode_responses=True)
-        logging.getLogger(__name__).info(f"CostLimitRule initialized with Redis at {redis_url}")
+        from backend.config.settings import settings
+        
+        url = redis_url or settings.REDIS_URL
+        self.redis_client = redis.from_url(url, decode_responses=True)
+        logging.getLogger(__name__).info(f"CostLimitRule initialized with Redis at {url}")
 
     def _get_cost_key(self, agent_id: str) -> str:
         # Daily cost key for agents

@@ -106,7 +106,7 @@ class LLMFactory:
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            api_key=api_key or os.environ.get("OPENAI_API_KEY", "dummy"),
+            api_key=api_key or os.environ.get("OPENAI_API_KEY"),
             base_url=base_url,
             **kwargs,
         )
