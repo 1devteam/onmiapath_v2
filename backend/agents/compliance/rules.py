@@ -268,7 +268,7 @@ class CostLimitRule:
         import redis.asyncio as redis
         import logging
         from backend.config.settings import settings
-        
+
         url = redis_url or settings.REDIS_URL
         self.redis_client = redis.from_url(url, decode_responses=True)
         logging.getLogger(__name__).info(f"CostLimitRule initialized with Redis at {url}")
@@ -276,6 +276,7 @@ class CostLimitRule:
     def _get_cost_key(self, agent_id: str) -> str:
         # Daily cost key for agents
         from datetime import datetime
+
         today = datetime.utcnow().strftime("%Y-%m-%d")
         return f"compliance:cost:{today}:{agent_id}"
 
@@ -310,7 +311,7 @@ class CostLimitRule:
         key = self._get_cost_key(agent_id)
         current_cost_str = await self.redis_client.get(key)
         current_cost = float(current_cost_str) if current_cost_str else 0.0
-        
+
         new_cost = current_cost + estimated_cost
 
         if new_cost > cost_limit:
@@ -322,7 +323,7 @@ class CostLimitRule:
         # Increment cost in Redis with 24-hour TTL
         async with self.redis_client.pipeline(transaction=True) as pipe:
             await pipe.incrbyfloat(key, estimated_cost)
-            await pipe.expire(key, 60 * 60 * 24) # 24h TTL
+            await pipe.expire(key, 60 * 60 * 24)  # 24h TTL
             await pipe.execute()
 
         return ComplianceResult.allow(self.name)
@@ -342,8 +343,9 @@ class CostLimitRule:
             rule.reset(agent_id="agent_123")
         """
         if agent_id is None:
-            # Note: Broad delete is risky in production; ideally use a pattern-based approach or keyspace scan
+            # Note: Broad delete is risky in production; use pattern-based or keyspace scan
             from datetime import datetime
+
             today = datetime.utcnow().strftime("%Y-%m-%d")
             pattern = f"compliance:cost:{today}:*"
             keys = await self.redis_client.keys(pattern)

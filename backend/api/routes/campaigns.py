@@ -293,7 +293,10 @@ async def run_campaign_post(
     if campaign["posts_published"] >= campaign["total_posts"]:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Campaign {campaign_id} is already complete ({campaign['total_posts']} posts published)",
+            detail=(
+                f"Campaign {campaign_id} is complete "
+                f"({campaign['total_posts']} posts published)"
+            ),
         )
 
     orchestrator = _get_saga_orchestrator(request)

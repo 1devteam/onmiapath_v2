@@ -44,13 +44,13 @@ class MissionExecutor:
             # Add to tenant mission list if not already there
             if tenant_id:
                 await pipe.sadd(self._get_tenant_missions_key(tenant_id), mission_id)
-            
+
             # Save state
             await pipe.hset(mission_key, mapping=state_to_save)
-            
+
             # Set expiration for mission state (30 days)
             await pipe.expire(mission_key, 60 * 60 * 24 * 30)
-            
+
             await pipe.execute()
 
     async def get_mission_state(self, mission_id: str) -> Optional[dict]:

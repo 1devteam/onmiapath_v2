@@ -66,7 +66,7 @@ class CommanderAgentV3(BaseAgentV3):
 
         # Build prompt with emotional context
         system_prompt = f"""You are the Commander agent in a multi-agent system.
-Your current emotional state: {self.emotional_state['mood']} (intensity: {self.emotional_state['intensity']}/10)
+Emotional state: {self.emotional_state['mood']} (intensity: {self.emotional_state['intensity']}/10)
 
 Evaluate the following signal and provide:
 1. Risk score (0.0 to 1.0)

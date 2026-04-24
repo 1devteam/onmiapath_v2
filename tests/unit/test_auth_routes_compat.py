@@ -34,6 +34,7 @@ def test_auth_router_exposes_login_and_token_endpoints():
 @pytest.mark.asyncio
 async def test_admin_token_bypass_returns_valid_user_model():
     from fastapi.security import HTTPAuthorizationCredentials
+
     creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="admin-token")
     user = await get_current_user(creds)
 

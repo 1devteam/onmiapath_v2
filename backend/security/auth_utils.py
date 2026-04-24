@@ -128,7 +128,7 @@ async def get_current_user(
                 detail="Administrative bypass token is disabled in production.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-            
+
         return User(
             id="admin-id",
             email=ADMIN_BYPASS_USER_EMAIL,

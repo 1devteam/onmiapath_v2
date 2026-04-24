@@ -120,7 +120,9 @@ class RedisRateLimiter(RateLimiter):
             getattr(redis_client.zadd, "__call__", None)
         )
 
-    async def check_rate_limit(self, key: str, limit: int, window_seconds: int) -> tuple[bool, int, int]:
+    async def check_rate_limit(
+        self, key: str, limit: int, window_seconds: int
+    ) -> tuple[bool, int, int]:
         """
         Check if rate limit is exceeded using Redis sorted set (Async).
 
@@ -147,9 +149,9 @@ class RedisRateLimiter(RateLimiter):
                 await pipe.zcard(redis_key)
                 # Get oldest entry for reset time calculation
                 await pipe.zrange(redis_key, 0, 0, withscores=True)
-                
+
                 results = await pipe.execute()
-                
+
             current_count = results[1]
             oldest = results[2]
 
@@ -178,6 +180,7 @@ class RedisRateLimiter(RateLimiter):
         except Exception as e:
             # If Redis fails, allow the request (fail open)
             import logging
+
             logging.getLogger(__name__).error(f"Redis rate limiter error: {e}")
             return True, limit - 1, window_seconds
 
@@ -255,6 +258,7 @@ class ComplianceRateLimiter:
 
         # Check rate limit
         import asyncio
+
         if asyncio.iscoroutinefunction(self.limiter.check_rate_limit):
             allowed, remaining, reset_seconds = await self.limiter.check_rate_limit(
                 key=key, limit=limit, window_seconds=window_seconds
@@ -292,6 +296,7 @@ class ComplianceRateLimiter:
         key = f"agent:{agent_id}:global"
 
         import asyncio
+
         if asyncio.iscoroutinefunction(self.limiter.check_rate_limit):
             allowed, remaining, reset_seconds = await self.limiter.check_rate_limit(
                 key=key, limit=global_limit, window_seconds=window_seconds
@@ -342,6 +347,7 @@ def get_rate_limiter() -> ComplianceRateLimiter:
     global _global_rate_limiter
     if _global_rate_limiter is None:
         from backend.config.settings import settings
+
         if settings.REDIS_URL:
             _global_rate_limiter = init_redis_rate_limiter(settings.REDIS_URL)
         else:

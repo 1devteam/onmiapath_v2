@@ -73,7 +73,7 @@ class ResourceMarketplace:
     ) -> Dict:
         """Charge an agent for resource usage."""
         key = self._get_balance_key(tenant_id, agent_id)
-        
+
         # Atomic update using pipeline
         async with self.redis_client.pipeline(transaction=True) as pipe:
             await pipe.hincrbyfloat(key, "balance", -amount)
@@ -84,15 +84,15 @@ class ResourceMarketplace:
             await pipe.execute()
 
         transaction_id = await self.record_transaction(
-            tenant_id, 
-            agent_id, 
-            -amount, 
-            "charge", 
-            f"Charge for {resource_type} (Mission: {mission_id})"
+            tenant_id,
+            agent_id,
+            -amount,
+            "charge",
+            f"Charge for {resource_type} (Mission: {mission_id})",
         )
 
         logger.info(f"Charged {amount} to agent {agent_id} for {resource_type}")
-        
+
         return {
             "id": transaction_id,
             "agent_id": agent_id,
@@ -114,7 +114,7 @@ class ResourceMarketplace:
     ) -> Dict:
         """Reward an agent for mission completion."""
         key = self._get_balance_key(tenant_id, agent_id)
-        
+
         async with self.redis_client.pipeline(transaction=True) as pipe:
             await pipe.hincrbyfloat(key, "balance", amount)
             await pipe.hincrbyfloat(key, "total_earned", amount)
@@ -124,15 +124,15 @@ class ResourceMarketplace:
             await pipe.execute()
 
         transaction_id = await self.record_transaction(
-            tenant_id, 
-            agent_id, 
-            amount, 
-            "reward", 
-            f"Reward for {resource_type} (Mission: {mission_id})"
+            tenant_id,
+            agent_id,
+            amount,
+            "reward",
+            f"Reward for {resource_type} (Mission: {mission_id})",
         )
 
         logger.info(f"Rewarded {amount} to agent {agent_id} for {resource_type}")
-        
+
         return {
             "id": transaction_id,
             "agent_id": agent_id,
@@ -148,7 +148,7 @@ class ResourceMarketplace:
     ) -> bool:
         """Top up agent balance."""
         key = self._get_balance_key(tenant_id, agent_id)
-        
+
         async with self.redis_client.pipeline(transaction=True) as pipe:
             await pipe.hincrbyfloat(key, "balance", amount)
             await pipe.hset(key, "last_updated", datetime.utcnow().isoformat())
@@ -156,13 +156,9 @@ class ResourceMarketplace:
             await pipe.execute()
 
         await self.record_transaction(
-            tenant_id, 
-            agent_id, 
-            amount, 
-            "top_up", 
-            f"Balance top-up {transaction_id or ''}"
+            tenant_id, agent_id, amount, "top_up", f"Balance top-up {transaction_id or ''}"
         )
-        
+
         logger.info(f"Topped up {amount} for agent {agent_id}")
         return True
 
@@ -193,16 +189,18 @@ class ResourceMarketplace:
             "description": description,
             "timestamp": datetime.utcnow().isoformat(),
         }
-        
+
         # Store in tenant and agent-specific lists
         tx_json = json.dumps(transaction)
         async with self.redis_client.pipeline(transaction=True) as pipe:
             await pipe.lpush(self._get_transactions_key(tenant_id), tx_json)
-            await pipe.ltrim(self._get_transactions_key(tenant_id), 0, 999) # Keep last 1000
+            await pipe.ltrim(self._get_transactions_key(tenant_id), 0, 999)  # Keep last 1000
             await pipe.lpush(self._get_transactions_key(tenant_id, agent_id), tx_json)
-            await pipe.ltrim(self._get_transactions_key(tenant_id, agent_id), 0, 499) # Keep last 500
+            await pipe.ltrim(
+                self._get_transactions_key(tenant_id, agent_id), 0, 499
+            )  # Keep last 500
             await pipe.execute()
-            
+
         return transaction_id
 
     async def get_transactions(
@@ -212,14 +210,14 @@ class ResourceMarketplace:
         key = self._get_transactions_key(tenant_id, agent_id)
         start = offset
         end = offset + limit - 1
-        
+
         tx_list = await self.redis_client.lrange(key, start, end)
         return [json.loads(tx) for tx in tx_list]
 
     async def get_tenant_stats(self, tenant_id: str) -> Dict:
         """Calculate tenant statistics from agent balances."""
         balances = await self.get_tenant_balances(tenant_id)
-        
+
         if not balances:
             return {
                 "total_agents": 0,
@@ -227,11 +225,11 @@ class ResourceMarketplace:
                 "total_spent_today": 0.0,
                 "total_earned_today": 0.0,
             }
-            
+
         total_balance = sum(b["balance"] for b in balances.values())
         total_spent = sum(b["total_spent"] for b in balances.values())
         total_earned = sum(b["total_earned"] for b in balances.values())
-        
+
         return {
             "total_agents": len(balances),
             "total_balance": total_balance,

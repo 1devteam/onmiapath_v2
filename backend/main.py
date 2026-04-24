@@ -52,6 +52,7 @@ async def lifespan(app: FastAPI):
     # Initialize Redis-based systems
     if settings.REDIS_URL:
         from backend.api.routes.economy import marketplace
+
         try:
             await marketplace.connect()
             logger.info(f"Redis-based economy system connected at {settings.REDIS_URL}")
@@ -70,7 +71,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Multi-agent AI system with emotional intelligence, agent economy, and self-improvement",
+    description="Multi-agent AI system with economy and self-improvement",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
