@@ -37,6 +37,7 @@ def _check_playwright() -> bool:
     if _playwright_available is None:
         try:
             from playwright.async_api import async_playwright  # noqa: F401
+
             _playwright_available = True
         except ImportError:
             _playwright_available = False
@@ -129,7 +130,10 @@ class PlaywrightBrowserTool(BaseTool):
         if not _check_playwright():
             return {
                 "success": False,
-                "error": "Playwright is not installed. Run: pip install playwright && playwright install chromium",
+                "error": (
+                    "Playwright is not installed. Run: pip install playwright "
+                    "&& playwright install chromium"
+                ),
             }
 
         try:
@@ -215,7 +219,11 @@ class PlaywrightBrowserTool(BaseTool):
         }
 
     async def _click(
-        self, page: Any, selector: Optional[str] = None, wait_for: Optional[str] = None, **kwargs: Any
+        self,
+        page: Any,
+        selector: Optional[str] = None,
+        wait_for: Optional[str] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """Click an element matching a CSS selector."""
         if not selector:

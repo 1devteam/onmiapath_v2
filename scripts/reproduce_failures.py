@@ -76,8 +76,9 @@ def demonstrate_stub_contamination():
     try:
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         import os
+
         key = os.urandom(32)
-        aesgcm = AESGCM(key)          # Returns a MagicMock instance
+        aesgcm = AESGCM(key)  # Returns a MagicMock instance
         nonce = os.urandom(12)
         plaintext = b"secret"
         ciphertext = aesgcm.encrypt(nonce, plaintext, None)  # AttributeError!
@@ -98,6 +99,7 @@ def demonstrate_event_store_api_mismatch():
 
     # Add repo root to path so we can import backend modules
     import os
+
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)

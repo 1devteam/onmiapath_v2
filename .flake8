@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 100
+extend-ignore = E203,W503
+per-file-ignores =
+    scripts/run_live_missions.py:E402
+    tests/test_web_page_reader.py:E402

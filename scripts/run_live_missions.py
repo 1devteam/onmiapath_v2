@@ -65,8 +65,7 @@ TOOL_SCHEMAS = [
         "function": {
             "name": "web_search",
             "description": (
-                "Search the web for current information. "
-                "Returns titles, snippets, and URLs."
+                "Search the web for current information. " "Returns titles, snippets, and URLs."
             ),
             "parameters": {
                 "type": "object",
@@ -90,8 +89,7 @@ TOOL_SCHEMAS = [
         "function": {
             "name": "python_executor",
             "description": (
-                "Execute Python code in a sandboxed subprocess. "
-                "Returns stdout and stderr."
+                "Execute Python code in a sandboxed subprocess. " "Returns stdout and stderr."
             ),
             "parameters": {
                 "type": "object",
@@ -292,19 +290,23 @@ async def run_mission(
                 if tool_name == "file_writer" and tool_result.get("success"):
                     files_written.append(tool_result.get("file_path", ""))
 
-                turn_record["tool_calls"].append({
-                    "tool": tool_name,
-                    "args": tool_args,
-                    "result_summary": str(tool_result)[:200],
-                    "success": tool_result.get("success", False),
-                })
+                turn_record["tool_calls"].append(
+                    {
+                        "tool": tool_name,
+                        "args": tool_args,
+                        "result_summary": str(tool_result)[:200],
+                        "success": tool_result.get("success", False),
+                    }
+                )
 
                 # Feed tool result back to the model
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(tool_result),
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(tool_result),
+                    }
+                )
 
         else:
             # No tool calls — the model produced a final answer
@@ -403,10 +405,10 @@ MISSIONS = [
 
 async def main():
     """Run all three missions and save results."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("CITADEL AGENT WORKFORCE — LIVE MISSION SUITE v1")
     print(f"Started: {datetime.utcnow().isoformat()}Z")
-    print("="*60)
+    print("=" * 60)
 
     all_results = []
 
@@ -435,9 +437,9 @@ async def main():
     )
 
     # Print summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("MISSION SUITE SUMMARY")
-    print("="*60)
+    print("=" * 60)
     for r in all_results:
         tool_count = sum(len(t["tool_calls"]) for t in r["turns"])
         print(
@@ -446,7 +448,7 @@ async def main():
             f"{r['elapsed_seconds']}s"
         )
     print(f"\nAll results saved to: {RESULTS_DIR}")
-    print("="*60)
+    print("=" * 60)
 
     return all_results
 

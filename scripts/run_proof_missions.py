@@ -156,7 +156,8 @@ def run_mission_2() -> Tuple[bool, str]:
 
     script_path = REPO_ROOT / "scripts" / "reproduce_failures.py"
 
-    script_content = textwrap.dedent('''\
+    script_content = textwrap.dedent(
+        '''\
         #!/usr/bin/env python3
         """
         Failure Reproducer — Phase 6 Self-Audit
@@ -283,7 +284,8 @@ def run_mission_2() -> Tuple[bool, str]:
             demonstrate_event_store_api_mismatch()
             print("\\n[Done] Both failures reproduced successfully.")
             print("See docstring at top of this file for root cause analysis and fix.")
-    ''')
+    '''
+    )
 
     with open(script_path, "w", encoding="utf-8") as f:
         f.write(script_content)
@@ -310,8 +312,8 @@ def run_mission_2() -> Tuple[bool, str]:
         print(f"  Script output:\n{output}")
 
     success = reproduced_1 and reproduced_2
-    f1 = '✓' if reproduced_1 else '✗'
-    f2 = '✓' if reproduced_2 else '✗'
+    f1 = "✓" if reproduced_1 else "✗"
+    f2 = "✓" if reproduced_2 else "✗"
     return success, f"Script at scripts/reproduce_failures.py — F1={f1}, F2={f2}"
 
 

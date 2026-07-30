@@ -202,18 +202,22 @@ async def run_m1() -> Dict[str, Any]:
                 if tool_name == "file_writer" and tool_result.get("success"):
                     files_written.append(tool_result.get("file_path", ""))
 
-                turn_record["tool_calls"].append({
-                    "tool": tool_name,
-                    "args": tool_args,
-                    "result_summary": str(tool_result)[:300],
-                    "success": tool_result.get("success", False),
-                })
+                turn_record["tool_calls"].append(
+                    {
+                        "tool": tool_name,
+                        "args": tool_args,
+                        "result_summary": str(tool_result)[:300],
+                        "success": tool_result.get("success", False),
+                    }
+                )
 
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(tool_result),
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(tool_result),
+                    }
+                )
         else:
             final_answer = msg.content
             status = "SUCCESS"
@@ -231,19 +235,15 @@ async def run_m1() -> Dict[str, Any]:
 
     total_tool_calls = sum(len(t["tool_calls"]) for t in turns)
     web_page_reads = sum(
-        1 for t in turns
-        for tc in t["tool_calls"]
-        if tc["tool"] == "web_page_reader"
+        1 for t in turns for tc in t["tool_calls"] if tc["tool"] == "web_page_reader"
     )
-    web_searches = sum(
-        1 for t in turns
-        for tc in t["tool_calls"]
-        if tc["tool"] == "web_search"
-    )
+    web_searches = sum(1 for t in turns for tc in t["tool_calls"] if tc["tool"] == "web_search")
 
     print(f"\n  Status: {status} | Turns: {len(turns)} | Time: {elapsed}s")
-    print(f"  Tool calls: {total_tool_calls} total "
-          f"({web_searches} searches, {web_page_reads} page reads)")
+    print(
+        f"  Tool calls: {total_tool_calls} total "
+        f"({web_searches} searches, {web_page_reads} page reads)"
+    )
     if final_answer:
         print(f"  Answer preview: {textwrap.shorten(final_answer or '', width=200)}")
 
