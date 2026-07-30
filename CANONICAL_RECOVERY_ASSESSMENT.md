@@ -179,10 +179,14 @@ Do not replace either source repository with this candidate. Promotion requires:
 
 ## Next Engineering Order
 
-1. Build a component-level forward-port plan from `v7.5.0-prod` into this
-   verified baseline; do not merge the trees wholesale.
-2. Review deployment manifests and remaining security configuration.
-3. Run production-style monitoring, alerting, backup, and smoke-test gates.
-4. Configure a GitHub App token if unattended release-PR CI approval is desired.
-5. Open a provenance-preserving pull request only after the donor forward-port
+1. Execute Slice 1 of `V7_5_DONOR_FORWARD_PORT_PLAN.md`: contract hardening for
+   economy payloads, authentication bypass rejection, and production settings.
+2. Rotate and audit the provider credential exposed in the donor's committed
+   deployment material; do not copy that material into the recovery line.
+3. Implement and validate the atomic economy-ledger and durable cost-governance
+   slices independently.
+4. Review deployment manifests and run production-style monitoring, alerting,
+   backup, restore, and smoke-test gates.
+5. Configure a GitHub App token if unattended release-PR CI approval is desired.
+6. Open a provenance-preserving pull request only after the donor forward-port
    and deployment gates are complete.
