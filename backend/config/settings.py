@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     OTEL_SERVICE_NAME: str = "omnipath"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"
     OTEL_EXPORTER_OTLP_INSECURE: bool = True
+    OTEL_METRICS_ENABLED: bool = False
 
     # Prometheus Metrics
     PROMETHEUS_ENABLED: bool = True

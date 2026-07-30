@@ -13,7 +13,11 @@ Built with Pride for Obex Blackvault
 import json
 import pytest
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
+
+
+MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "alembic" / "versions"
 
 
 # =============================================================================
@@ -397,8 +401,7 @@ class TestMigrationStructure:
     def test_migration_has_correct_revision(self):
         """Migration file has the expected revision ID."""
         import importlib.util
-        _mig_path = (
-            "/home/ubuntu/fresh_repo/alembic/versions/"
+        _mig_path = MIGRATIONS_DIR / (
             "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
         )
         spec = importlib.util.spec_from_file_location("migration_b2c3", _mig_path)
@@ -413,8 +416,7 @@ class TestMigrationStructure:
     def test_migration_upgrade_creates_both_tables(self):
         """upgrade() creates scheduled_jobs and external_api_keys tables."""
         import importlib.util
-        _mig_path = (
-            "/home/ubuntu/fresh_repo/alembic/versions/"
+        _mig_path = MIGRATIONS_DIR / (
             "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
         )
         spec = importlib.util.spec_from_file_location("migration_b2c3", _mig_path)
@@ -436,8 +438,7 @@ class TestMigrationStructure:
     def test_migration_downgrade_drops_both_tables(self):
         """downgrade() drops both tables."""
         import importlib.util
-        _mig_path = (
-            "/home/ubuntu/fresh_repo/alembic/versions/"
+        _mig_path = MIGRATIONS_DIR / (
             "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
         )
         spec = importlib.util.spec_from_file_location("migration_b2c3", _mig_path)

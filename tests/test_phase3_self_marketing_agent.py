@@ -361,8 +361,6 @@ class TestSocialMediaPostingSaga:
         event_store = MagicMock()
         # SagaOrchestrator._emit_event calls event_store.append()
         event_store.append = AsyncMock(return_value={"id": "evt_123"})
-        # SocialMediaPostingSaga steps call event_store.append_event()
-        event_store.append_event = AsyncMock(return_value={"id": "evt_123"})
         return SagaOrchestrator(event_store=event_store), event_store
 
     def _make_mission_executor(self, result_text="Test post content"):
@@ -412,7 +410,7 @@ class TestSocialMediaPostingSaga:
 
         assert success is True
         # EventStore should have been called for record_post
-        assert event_store.append_event.called
+        assert event_store.append.called
 
     def test_saga_records_post_published_event(self):
         """SocialMediaPostingSaga emits campaign.post_published event."""
@@ -438,7 +436,7 @@ class TestSocialMediaPostingSaga:
         ))
 
         # Find the post_published event call
-        calls = event_store.append_event.call_args_list
+        calls = event_store.append.call_args_list
         event_types = [c.kwargs.get("event_type") or c.args[1] for c in calls]
         assert "campaign.post_published" in event_types
 
@@ -468,7 +466,7 @@ class TestSocialMediaPostingSaga:
             schedule_next_at="2026-03-03T12:00:00",
         ))
 
-        calls = event_store.append_event.call_args_list
+        calls = event_store.append.call_args_list
         event_types = [c.kwargs.get("event_type") or c.args[1] for c in calls]
         assert "campaign.next_post_scheduled" in event_types
 
@@ -498,7 +496,7 @@ class TestSocialMediaPostingSaga:
             schedule_next_at="2026-03-03T12:00:00",
         ))
 
-        calls = event_store.append_event.call_args_list
+        calls = event_store.append.call_args_list
         event_types = [c.kwargs.get("event_type") or c.args[1] for c in calls]
         # Should NOT schedule next since this is the last post
         assert "campaign.next_post_scheduled" not in event_types

@@ -19,6 +19,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
+from backend.config.settings import settings
 from backend.integrations.observability.prometheus_metrics import get_metrics
 
 try:
@@ -94,13 +95,7 @@ class ResourceMarketplace:
             logger.info("Economy: Redis package not installed — using in-memory storage")
             return
 
-        url = self._redis_url
-        if not url:
-            try:
-                from backend.core.config import get_settings
-                url = get_settings().redis_url
-            except Exception:
-                url = "redis://localhost:6379/0"
+        url = self._redis_url or settings.REDIS_URL
 
         try:
             self._redis = aioredis.from_url(

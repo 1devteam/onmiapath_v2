@@ -67,8 +67,15 @@ logger = logging.getLogger(__name__)
 # Initialize settings
 settings = Settings()
 
-# Initialize observability
-telemetry = get_telemetry()
+# Initialize observability from application settings before instrumenting
+# FastAPI. Provider initialization is idempotent, so lifespan startup cannot
+# replace a global provider or silently switch exporter endpoints.
+telemetry = get_telemetry(initialize=False)
+telemetry.service_name = settings.OTEL_SERVICE_NAME
+telemetry.otlp_endpoint = settings.OTEL_EXPORTER_OTLP_ENDPOINT
+telemetry.enabled = settings.OTEL_ENABLED
+telemetry.export_metrics = settings.OTEL_METRICS_ENABLED
+telemetry.initialize()
 prom_metrics = get_metrics()
 
 # Global service instances (initialized in lifespan)
@@ -107,13 +114,9 @@ async def lifespan(app: FastAPI):
     # deadlocks when multiple uvicorn workers each try to migrate simultaneously.
     logger.info("Database migrations handled by Dockerfile pre-start step")
 
-    # Initialize OpenTelemetry
+    # OpenTelemetry was initialized before FastAPI instrumentation.
     if settings.OTEL_ENABLED:
-        logger.info("Initializing OpenTelemetry...")
-        telemetry.service_name = settings.OTEL_SERVICE_NAME
-        telemetry.otlp_endpoint = settings.OTEL_EXPORTER_OTLP_ENDPOINT
-        telemetry.enabled = settings.OTEL_ENABLED
-        telemetry.initialize()
+        logger.info("OpenTelemetry initialized")
     else:
         logger.info("OpenTelemetry disabled")
 
@@ -206,33 +209,37 @@ async def lifespan(app: FastAPI):
     except Exception as _vault_err:
         logger.warning(f"VaultService init failed (non-fatal): {_vault_err}")
 
-    # Initialize RevenueAgent (Phase 5 — sales pipeline and deal closing)
-    logger.info("Initializing RevenueAgent...")
-    try:
-        from backend.orchestration.revenue_agent import RevenueAgent
-        global _revenue_agent_ref
-        _revenue_agent_ref = RevenueAgent(
-            llm_service=llm_service,
-            event_store=_event_store_ref,
-        )
-        app.state.revenue_agent = _revenue_agent_ref
-        logger.info("✅ RevenueAgent initialised")
-    except Exception as _rev_err:
-        logger.warning(f"RevenueAgent init failed (non-fatal): {_rev_err}")
-
     # Initialize WorkforceCoordinator (Phase 4 — multi-agent coordination)
     logger.info("Initializing WorkforceCoordinator...")
     try:
         from backend.orchestration.workforce_coordinator import WorkforceCoordinator
         global _workforce_coordinator_ref
         _workforce_coordinator_ref = WorkforceCoordinator(
+            llm_service=llm_service,
             mission_executor=mission_executor,
             event_store=_event_store_ref,
+            marketplace=marketplace,
         )
         app.state.workforce_coordinator = _workforce_coordinator_ref
         logger.info("✅ WorkforceCoordinator initialised")
     except Exception as _wfc_err:
         logger.warning(f"WorkforceCoordinator init failed (non-fatal): {_wfc_err}")
+
+    # Initialize RevenueAgent after its WorkforceCoordinator dependency.
+    logger.info("Initializing RevenueAgent...")
+    try:
+        from backend.orchestration.revenue_agent import RevenueAgent
+        global _revenue_agent_ref
+        if _workforce_coordinator_ref is None:
+            raise RuntimeError("WorkforceCoordinator is unavailable")
+        _revenue_agent_ref = RevenueAgent(
+            workforce_coordinator=_workforce_coordinator_ref,
+            event_store=_event_store_ref,
+        )
+        app.state.revenue_agent = _revenue_agent_ref
+        logger.info("✅ RevenueAgent initialised")
+    except Exception as _rev_err:
+        logger.warning(f"RevenueAgent init failed (non-fatal): {_rev_err}")
 
     # Initialize SchedulerService (APScheduler-backed recurring missions)
     logger.info("Initializing SchedulerService...")

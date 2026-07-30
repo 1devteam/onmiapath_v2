@@ -47,10 +47,12 @@ class TelemetryManager:
         service_name: str = "omnipath",
         otlp_endpoint: Optional[str] = None,
         enabled: bool = True,
+        export_metrics: bool = False,
     ):
         self.service_name = service_name
         self.otlp_endpoint = otlp_endpoint or "http://localhost:4317"
         self.enabled = enabled
+        self.export_metrics = export_metrics
         self.tracer_provider: Optional[TracerProvider] = None
         self.meter_provider: Optional[MeterProvider] = None
         self.tracer = None
@@ -61,7 +63,7 @@ class TelemetryManager:
             logger.warning("OpenTelemetry not available - tracing and metrics disabled")
             self.enabled = False
 
-    def initialize(self):
+    def initialize(self) -> None:
         """
         Initialize OpenTelemetry tracing and metrics
 
@@ -69,6 +71,10 @@ class TelemetryManager:
         1. Tracer for distributed tracing (sends to Jaeger)
         2. Meter for OpenTelemetry metrics (complementary to Prometheus)
         """
+        if self._initialized:
+            logger.debug("OpenTelemetry already initialized")
+            return
+
         # Allow disabling OTLP for testing without infrastructure
         if os.getenv("OTEL_SDK_DISABLED", "false").lower() == "true":
             logger.info("OpenTelemetry disabled via OTEL_SDK_DISABLED environment variable")
@@ -104,21 +110,23 @@ class TelemetryManager:
             # Get tracer
             self.tracer = trace.get_tracer(__name__)
 
-            # Initialize Meter Provider
-            otlp_metric_exporter = OTLPMetricExporter(endpoint=self.otlp_endpoint, insecure=True)
-
-            metric_reader = PeriodicExportingMetricReader(
-                otlp_metric_exporter,
-                export_interval_millis=60000,  # Export every 60 seconds
-            )
-
-            self.meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
-
-            # Set global meter provider
-            otel_metrics.set_meter_provider(self.meter_provider)
-
-            # Get meter
-            self.meter = otel_metrics.get_meter(__name__)
+            if self.export_metrics:
+                # OTLP metrics require a collector that implements the metrics
+                # service. Jaeger accepts OTLP traces but not OTLP metrics.
+                otlp_metric_exporter = OTLPMetricExporter(
+                    endpoint=self.otlp_endpoint,
+                    insecure=True,
+                )
+                metric_reader = PeriodicExportingMetricReader(
+                    otlp_metric_exporter,
+                    export_interval_millis=60000,
+                )
+                self.meter_provider = MeterProvider(
+                    resource=resource,
+                    metric_readers=[metric_reader],
+                )
+                otel_metrics.set_meter_provider(self.meter_provider)
+                self.meter = otel_metrics.get_meter(__name__)
 
             self._initialized = True
             logger.info(f"✅ OpenTelemetry initialized - sending traces to {self.otlp_endpoint}")
@@ -233,25 +241,30 @@ class TelemetryManager:
 telemetry = TelemetryManager()
 
 
-def get_telemetry() -> TelemetryManager:
+def get_telemetry(*, initialize: bool = True) -> TelemetryManager:
     """
-    Get the global telemetry manager
+    Get the global telemetry manager.
 
-    Use this in your code to access telemetry
+    Args:
+        initialize: Initialize the manager when it has not been initialized.
+            Application bootstrapping passes ``False`` so settings can be
+            applied before providers are created.
     """
-    if not telemetry._initialized:
+    if initialize and not telemetry._initialized:
         telemetry.initialize()
     return telemetry
 
 
 # Backward compatibility with old interface
 def get_tracer(name: str = "omnipath"):
-    """Get tracer (backward compatible)"""
-    tel = get_telemetry()
-    return tel.tracer if tel.tracer else None
+    """Return a tracer without forcing provider initialization."""
+    if not OTEL_AVAILABLE:
+        return None
+    return trace.get_tracer(name)
 
 
 def get_meter(name: str = "omnipath"):
-    """Get meter (backward compatible)"""
-    tel = get_telemetry()
-    return tel.meter if tel.meter else None
+    """Return a meter without forcing provider initialization."""
+    if not OTEL_AVAILABLE:
+        return None
+    return otel_metrics.get_meter(name)

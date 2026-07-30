@@ -14,6 +14,8 @@ from backend.models.domain.user import User, UserRole
 from backend.middleware.auth.auth_middleware import create_access_token
 from backend.economy.resource_marketplace import ResourceMarketplace
 from backend.config.settings import Settings
+from backend.database.base import Base
+from backend.database.session import engine
 
 
 # ============================================================================
@@ -21,12 +23,16 @@ from backend.config.settings import Settings
 # ============================================================================
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def event_loop():
-    """Create an event loop for the entire test session"""
+    """Create and install an isolated event loop for each async test."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+    asyncio.set_event_loop(loop)
+    try:
+        yield loop
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
 
 
 @pytest.fixture(scope="session")
@@ -47,8 +53,20 @@ def test_settings():
 # ============================================================================
 
 
+@pytest.fixture(scope="session")
+def database_schema() -> Generator[None, None, None]:
+    """Create the application schema required by integration tests.
+
+    Test database selection remains the caller's responsibility through
+    ``DATABASE_URL``. Tables are not dropped here because the configured URL
+    may refer to a shared integration database.
+    """
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def client(database_schema: None) -> Generator[TestClient, None, None]:
     """
     Synchronous test client for FastAPI
 

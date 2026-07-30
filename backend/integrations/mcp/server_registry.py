@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -61,7 +62,9 @@ def _make_builtin_servers() -> List[MCPServerConfig]:
     ``python -m backend.integrations.mcp.tool_server <tool_name>``,
     which is implemented in tool_server.py.
     """
-    python_exe = shutil.which("python3.11") or shutil.which("python3") or "python"
+    # Built-in servers are part of this application and must run with the same
+    # interpreter and installed dependencies as the parent process.
+    python_exe = sys.executable
 
     tool_servers = [
         ("web_search", "DuckDuckGo web search — no API key required"),

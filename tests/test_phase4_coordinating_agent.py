@@ -30,9 +30,13 @@ import sys
 import types
 import uuid
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+
+MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "alembic" / "versions"
 
 
 # ---------------------------------------------------------------------------
@@ -432,11 +436,8 @@ def test_workforce_member_model_columns():
 
 def test_phase4_migration_chain():
     import importlib.util
-    import os
-    migration_path = os.path.join(
-        "/home/ubuntu/fresh_repo",
-        "alembic", "versions",
-        "c3d4e5f6a7b8_add_workforce_tables.py",
+    migration_path = MIGRATIONS_DIR / (
+        "c3d4e5f6a7b8_add_workforce_tables.py"
     )
     spec = importlib.util.spec_from_file_location(
         "c3d4e5f6a7b8_add_workforce_tables", migration_path

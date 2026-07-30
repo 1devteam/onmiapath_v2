@@ -156,13 +156,24 @@ class MCPClient(LoggerMixin):
         Args:
             server_name: Name of the server
         """
-        process = self._processes.get(server_name)
-        if process:
-            process.terminate()
-            await process.wait()
-            del self._processes[server_name]
+        process = self._processes.pop(server_name, None)
+        if process is None:
+            return
 
-            self.log_info(f"MCP server stopped: {server_name}")
+        if process.returncode is None:
+            try:
+                process.terminate()
+            except ProcessLookupError:
+                # The child may exit between the returncode check and signal.
+                pass
+
+        try:
+            await process.wait()
+        except ProcessLookupError:
+            # Some event-loop transports report an already-reaped child here.
+            pass
+
+        self.log_info(f"MCP server stopped: {server_name}")
 
     async def _discover_capabilities(self, server_name: str) -> None:
         """
@@ -187,15 +198,15 @@ class MCPClient(LoggerMixin):
             capabilities = response.get("capabilities", {})
 
             # Discover tools
-            if capabilities.get("tools"):
+            if "tools" in capabilities:
                 await self._discover_tools(server_name)
 
             # Discover prompts
-            if capabilities.get("prompts"):
+            if "prompts" in capabilities:
                 await self._discover_prompts(server_name)
 
             # Discover resources
-            if capabilities.get("resources"):
+            if "resources" in capabilities:
                 await self._discover_resources(server_name)
 
             self.log_info(
@@ -434,6 +445,10 @@ class MCPClient(LoggerMixin):
 
         # Read response
         response_line = await process.stdout.readline()
+        if not response_line:
+            raise RuntimeError(
+                f"MCP server {server_name!r} closed stdout before responding to {method!r}"
+            )
         response = json.loads(response_line.decode())
 
         # Check for error

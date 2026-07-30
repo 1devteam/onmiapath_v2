@@ -37,9 +37,13 @@ Built with Pride for Obex Blackvault.
 import sys
 import types
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
+
+MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "alembic" / "versions"
 
 
 # ---------------------------------------------------------------------------
@@ -677,12 +681,9 @@ def test_deal_model_columns():
 
 def test_phase5_migration_chain():
     import importlib.util
-    import os
 
-    migration_path = os.path.join(
-        "/home/ubuntu/fresh_repo",
-        "alembic", "versions",
-        "d4e5f6a7b8c9_add_sales_pipeline_tables.py",
+    migration_path = MIGRATIONS_DIR / (
+        "d4e5f6a7b8c9_add_sales_pipeline_tables.py"
     )
     spec = importlib.util.spec_from_file_location(
         "d4e5f6a7b8c9_add_sales_pipeline_tables", migration_path

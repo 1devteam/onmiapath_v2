@@ -12,6 +12,31 @@ from fastapi.testclient import TestClient
 class TestSystemEndpoints:
     """Test system-level endpoints"""
 
+    def test_orchestration_services_initialized(self, client: TestClient):
+        """Startup wires workforce and revenue services in dependency order."""
+        from backend.main import get_revenue_agent, get_workforce_coordinator
+
+        coordinator = get_workforce_coordinator()
+        revenue_agent = get_revenue_agent()
+
+        assert coordinator is not None
+        assert revenue_agent is not None
+        assert revenue_agent.coordinator is coordinator
+
+    def test_mcp_builtin_tools_discovered(self, client: TestClient):
+        """Built-in MCP servers launch in the active Python environment."""
+        from backend.integrations.mcp.setup import get_mcp_client
+
+        mcp_client = get_mcp_client()
+        assert mcp_client is not None
+        assert {tool.name for tool in mcp_client.list_tools()} == {
+            "web_search",
+            "python_executor",
+            "file_reader",
+            "file_writer",
+            "calculator",
+        }
+
     def test_health_check(self, client: TestClient):
         """Test the /health endpoint"""
         response = client.get("/health")
@@ -51,7 +76,7 @@ class TestEconomyEndpoints:
         """Test that economy endpoints require authentication"""
         response = client.get("/api/v1/economy/balance")
 
-        assert response.status_code == 403  # Forbidden (no auth header)
+        assert response.status_code == 401  # Unauthorized (missing bearer credentials)
 
     def test_get_agent_balances_with_auth(self, client: TestClient, auth_headers: dict):
         """Test retrieving agent balances with authentication"""
@@ -148,7 +173,7 @@ class TestPerformanceEndpoints:
         """Test that performance endpoints require authentication"""
         response = client.get("/api/v1/performance/agents")
 
-        assert response.status_code == 403  # Forbidden (no auth header)
+        assert response.status_code == 401  # Unauthorized (missing bearer credentials)
 
     def test_get_all_agent_performance(self, client: TestClient, auth_headers: dict):
         """Test retrieving performance metrics for all agents"""

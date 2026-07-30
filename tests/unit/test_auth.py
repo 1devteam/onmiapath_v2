@@ -301,7 +301,7 @@ class TestProtectedEndpoints:
     def test_protected_endpoint_without_auth(self, client):
         """Test that protected endpoints reject requests without auth"""
         response = client.get("/api/v1/economy/balance")
-        assert response.status_code == 403  # Forbidden (no auth header)
+        assert response.status_code == 401  # Unauthorized (missing bearer credentials)
 
     def test_protected_endpoint_with_auth(self, client, auth_headers):
         """Test that protected endpoints accept valid auth"""

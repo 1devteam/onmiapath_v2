@@ -24,16 +24,19 @@ from backend.config.settings import settings
 _raw_url: str = os.getenv("DATABASE_URL", settings.DATABASE_URL)
 
 _DEFAULT_LOCAL_URL = "postgresql://omnipath:omnipath@localhost:5432/omnipath"
-_is_local_dev: bool = (
+_is_explicit_sqlite = _raw_url.startswith(("sqlite://", "sqlite+aiosqlite://"))
+_uses_sqlite: bool = _is_explicit_sqlite or (
     _raw_url == _DEFAULT_LOCAL_URL
     or _raw_url.startswith("postgresql://omnipath:omnipath@localhost")
 )
 
-if _is_local_dev:
+if _is_explicit_sqlite:
+    _sync_url = _raw_url.replace("sqlite+aiosqlite://", "sqlite://", 1)
+    _async_url = _raw_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+elif _uses_sqlite:
     # ── Local developer machine without a running PostgreSQL instance ──────
     _sync_url = "sqlite:///./omnipath.db"
     _async_url = "sqlite+aiosqlite:///./omnipath.db"
-    print(f"[session] Local dev mode — using SQLite: {_sync_url}")
 else:
     # ── Docker / VPS — PostgreSQL is available ─────────────────────────────
     _sync_url = _raw_url
@@ -48,7 +51,7 @@ else:
 # ---------------------------------------------------------------------------
 # Synchronous engine + session (used by existing CRUD routes)
 # ---------------------------------------------------------------------------
-if _is_local_dev:
+if _uses_sqlite:
     engine = create_engine(
         _sync_url,
         connect_args={"check_same_thread": False},
@@ -89,7 +92,7 @@ def get_db() -> Generator[Session, None, None]:
 # ---------------------------------------------------------------------------
 # Asynchronous engine + session (used by EventStore, CQRS, and new routes)
 # ---------------------------------------------------------------------------
-if _is_local_dev:
+if _uses_sqlite:
     async_engine = create_async_engine(
         _async_url,
         connect_args={"check_same_thread": False},
