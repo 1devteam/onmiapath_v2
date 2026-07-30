@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout tested main commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           ref: main
           fetch-depth: 0
@@ -54,7 +54,7 @@ jobs:
 
       - name: Set up Python
         if: steps.state.outputs.current == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.12"
 

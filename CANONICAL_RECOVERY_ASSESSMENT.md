@@ -94,6 +94,12 @@ Corrections were applied only to this copied tree:
 - CI hardening validation:
   - 937 tests collected; 935 passed, 2 skipped, 0 failed.
   - Black, Flake8, Ruff, Bandit, Python compilation, and Actionlint passed.
+  - GitHub Actions run `30588958061` passed all four jobs on the exact
+    hardened commit: Code Quality, Static Security, Python Tests, and Docker
+    Build.
+  - Workflow dependencies use current Node 24-compatible release tags; the
+    container scanner is pinned to a versioned Trivy action rather than a
+    mutable branch.
   - The protected-branch release preparer produced a correct 7.1.5 to 7.1.6
     patch release in a disposable Git repository without committing, tagging,
     or pushing.
