@@ -24,6 +24,7 @@ from backend.integrations.observability.prometheus_metrics import get_metrics
 
 try:
     import redis.asyncio as aioredis
+
     _REDIS_AVAILABLE = True
 except ImportError:
     _REDIS_AVAILABLE = False
@@ -198,8 +199,7 @@ class ResourceMarketplace:
         key = self._txn_key(tenant_id)
         # Serialise datetime objects
         record = {
-            k: (v.isoformat() if isinstance(v, datetime) else v)
-            for k, v in transaction.items()
+            k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in transaction.items()
         }
         await self._redis.lpush(key, json.dumps(record))
         # Cap the list at 10,000 transactions per tenant to prevent unbounded growth
@@ -219,7 +219,7 @@ class ResourceMarketplace:
             raw_all = await self._redis.lrange(key, 0, 9999)
             records = [json.loads(r) for r in raw_all]
             records = [r for r in records if r.get("agent_id") == agent_id]
-            return records[offset: offset + limit]
+            return records[offset : offset + limit]
         else:
             raw = await self._redis.lrange(key, offset, offset + limit - 1)
             return [json.loads(r) for r in raw]
@@ -434,11 +434,14 @@ class ResourceMarketplace:
             if agent_id:
                 transactions = [tx for tx in transactions if tx["agent_id"] == agent_id]
             transactions.sort(
-                key=lambda x: x["timestamp"] if isinstance(x["timestamp"], datetime)
-                else datetime.fromisoformat(x["timestamp"]),
+                key=lambda x: (
+                    x["timestamp"]
+                    if isinstance(x["timestamp"], datetime)
+                    else datetime.fromisoformat(x["timestamp"])
+                ),
                 reverse=True,
             )
-            return transactions[offset: offset + limit]
+            return transactions[offset : offset + limit]
 
     async def get_tenant_stats(self, tenant_id: str) -> Dict:
         """
@@ -451,17 +454,18 @@ class ResourceMarketplace:
         transactions = await self.get_transactions(tenant_id, limit=10000)
 
         total_agents = len(balances)
-        total_balance = sum(
-            float(data["balance"]) for data in balances.values()
-        )
+        total_balance = sum(float(data["balance"]) for data in balances.values())
 
         today = _today_str()
         today_transactions = [
-            tx for tx in transactions
+            tx
+            for tx in transactions
             if (
-                tx["timestamp"][:10] if isinstance(tx["timestamp"], str)
+                tx["timestamp"][:10]
+                if isinstance(tx["timestamp"], str)
                 else tx["timestamp"].date().isoformat()
-            ) == today
+            )
+            == today
         ]
 
         total_spent_today = sum(

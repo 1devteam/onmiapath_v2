@@ -8,6 +8,7 @@ The module auto-detects the runtime environment:
 
 Built with Pride for Obex Blackvault
 """
+
 import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Generator
@@ -42,10 +43,8 @@ else:
     _sync_url = _raw_url
     # Convert postgresql:// → postgresql+asyncpg:// for the async engine.
     # Also handle the postgres:// alias used by some hosting providers.
-    _async_url = (
-        _raw_url
-        .replace("postgresql://", "postgresql+asyncpg://", 1)
-        .replace("postgres://", "postgresql+asyncpg://", 1)
+    _async_url = _raw_url.replace("postgresql://", "postgresql+asyncpg://", 1).replace(
+        "postgres://", "postgresql+asyncpg://", 1
     )
 
 # ---------------------------------------------------------------------------

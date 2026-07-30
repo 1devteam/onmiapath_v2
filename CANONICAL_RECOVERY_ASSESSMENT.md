@@ -80,7 +80,7 @@ Corrections were applied only to this copied tree:
   - 2 skipped
   - 0 failed
   - 0 errors
-  - Runtime: 202.41 seconds in the clean branch environment
+  - Runtime: 222.49 seconds in the clean branch environment
 - The isolated suite explicitly disabled NATS and OpenTelemetry through
   application settings. Those integrations were validated separately against
   live disposable services.
@@ -147,6 +147,9 @@ Corrections were applied only to this copied tree:
 4. Deployment dependencies must continue to be installed in a dedicated
    Omnipath virtual environment or container rather than the shared utilities
    environment.
+5. The inherited CI formatting gate is not yet green repository-wide: Black
+   identifies 25 untouched Python files and Flake8 identifies 14 untouched
+   violations. All recovery-touched Python files pass Black, Flake8, and Ruff.
 
 ## Promotion Gate
 

@@ -401,9 +401,8 @@ class TestMigrationStructure:
     def test_migration_has_correct_revision(self):
         """Migration file has the expected revision ID."""
         import importlib.util
-        _mig_path = MIGRATIONS_DIR / (
-            "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
-        )
+
+        _mig_path = MIGRATIONS_DIR / ("b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py")
         spec = importlib.util.spec_from_file_location("migration_b2c3", _mig_path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -416,9 +415,8 @@ class TestMigrationStructure:
     def test_migration_upgrade_creates_both_tables(self):
         """upgrade() creates scheduled_jobs and external_api_keys tables."""
         import importlib.util
-        _mig_path = MIGRATIONS_DIR / (
-            "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
-        )
+
+        _mig_path = MIGRATIONS_DIR / ("b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py")
         spec = importlib.util.spec_from_file_location("migration_b2c3", _mig_path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -438,9 +436,8 @@ class TestMigrationStructure:
     def test_migration_downgrade_drops_both_tables(self):
         """downgrade() drops both tables."""
         import importlib.util
-        _mig_path = MIGRATIONS_DIR / (
-            "b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py"
-        )
+
+        _mig_path = MIGRATIONS_DIR / ("b2c3d4e5f6a7_add_scheduled_jobs_and_api_key_vault.py")
         spec = importlib.util.spec_from_file_location("migration_b2c3", _mig_path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -469,11 +466,24 @@ class TestDatabaseModels:
 
         columns = {c.key for c in ScheduledJob.__table__.columns}
         required = {
-            "id", "name", "tenant_id", "agent_id", "created_by",
-            "trigger_type", "cron_expression", "interval_seconds",
-            "mission_payload", "is_active", "max_runs", "run_count",
-            "last_run_at", "next_run_at", "last_run_status",
-            "last_run_mission_id", "created_at", "updated_at",
+            "id",
+            "name",
+            "tenant_id",
+            "agent_id",
+            "created_by",
+            "trigger_type",
+            "cron_expression",
+            "interval_seconds",
+            "mission_payload",
+            "is_active",
+            "max_runs",
+            "run_count",
+            "last_run_at",
+            "next_run_at",
+            "last_run_status",
+            "last_run_mission_id",
+            "created_at",
+            "updated_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 
@@ -484,9 +494,18 @@ class TestDatabaseModels:
         # Use DB column names (c.key maps to DB column name in __table__.columns)
         columns = {c.key for c in ExternalAPIKey.__table__.columns}
         required = {
-            "id", "tenant_id", "created_by", "service", "key_name",
-            "encrypted_value", "nonce", "metadata", "is_active",
-            "created_at", "updated_at", "last_used_at",
+            "id",
+            "tenant_id",
+            "created_by",
+            "service",
+            "key_name",
+            "encrypted_value",
+            "nonce",
+            "metadata",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "last_used_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 
