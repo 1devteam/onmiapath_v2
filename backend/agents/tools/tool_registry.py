@@ -6,11 +6,15 @@ This module provides a comprehensive tool-calling infrastructure for agents.
 Tools include web search, code execution, file operations, and more.
 """
 
-from typing import Dict, Any, List, Optional
-import subprocess
-import tempfile
+import ast
 import os
 import logging
+import math
+import operator
+import subprocess
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from langchain_core.tools import Tool
 
@@ -19,6 +23,19 @@ from langchain_core.tools import Tool
 from backend.agents.tools.base import BaseTool, ToolCategory  # noqa: F401
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_TOOL_WORKSPACE = Path(
+    os.getenv("OMNIPATH_TOOL_WORKSPACE", str(Path(tempfile.gettempdir()) / "omnipath-tools"))
+).resolve()
+
+
+def _resolve_allowed_path(file_path: str, allowed_directories: List[str]) -> Path:
+    """Resolve a path and require it to remain within an allowed directory."""
+    candidate = Path(file_path).expanduser().resolve()
+    allowed_roots = [Path(directory).expanduser().resolve() for directory in allowed_directories]
+    if not any(candidate.is_relative_to(root) for root in allowed_roots):
+        raise PermissionError(f"Access denied: {candidate} is not in allowed directories")
+    return candidate
 
 
 class WebSearchTool(BaseTool):
@@ -177,7 +194,7 @@ Note: Only reads files in allowed directories."""
         Args:
             allowed_directories: List of allowed directory paths
         """
-        self.allowed_directories = allowed_directories or ["/tmp", "/home/ubuntu"]
+        self.allowed_directories = allowed_directories or [str(_DEFAULT_TOOL_WORKSPACE)]
 
     async def execute(self, file_path: str) -> Dict[str, Any]:
         """
@@ -190,31 +207,24 @@ Note: Only reads files in allowed directories."""
             File contents and metadata
         """
         try:
-            # Resolve to absolute path
-            abs_path = os.path.abspath(file_path)
-
-            # Check if path is in allowed directories
-            allowed = any(abs_path.startswith(os.path.abspath(d)) for d in self.allowed_directories)
-
-            if not allowed:
-                return {
-                    "success": False,
-                    "error": f"Access denied: {abs_path} is not in allowed directories",
-                }
+            abs_path = _resolve_allowed_path(file_path, self.allowed_directories)
 
             # Read the file
-            with open(abs_path, "r") as f:
+            with abs_path.open("r") as f:
                 content = f.read()
 
             return {
                 "success": True,
-                "file_path": abs_path,
+                "file_path": str(abs_path),
                 "content": content,
                 "size_bytes": len(content),
             }
 
         except FileNotFoundError:
             return {"success": False, "error": f"File not found: {file_path}"}
+
+        except PermissionError as exc:
+            return {"success": False, "error": str(exc)}
 
         except Exception as e:
             logger.error(f"File read failed: {e}")
@@ -248,7 +258,7 @@ Note: Only writes to allowed directories."""
         Args:
             allowed_directories: List of allowed directory paths
         """
-        self.allowed_directories = allowed_directories or ["/tmp"]
+        self.allowed_directories = allowed_directories or [str(_DEFAULT_TOOL_WORKSPACE)]
 
     async def execute(self, file_path: str, content: str) -> Dict[str, Any]:
         """
@@ -262,32 +272,22 @@ Note: Only writes to allowed directories."""
             Success confirmation
         """
         try:
-            # Resolve to absolute path
-            abs_path = os.path.abspath(file_path)
-
-            # Check if path is in allowed directories
-            allowed = any(abs_path.startswith(os.path.abspath(d)) for d in self.allowed_directories)
-
-            if not allowed:
-                return {
-                    "success": False,
-                    "error": f"Access denied: {abs_path} is not in allowed directories",
-                }
+            abs_path = _resolve_allowed_path(file_path, self.allowed_directories)
 
             # Ensure directory exists
-            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Write the file
-            with open(abs_path, "w") as f:
+            with abs_path.open("w") as f:
                 f.write(content)
 
             return {
                 "success": True,
-                "file_path": abs_path,
+                "file_path": str(abs_path),
                 "bytes_written": len(content),
             }
 
-        except Exception as e:
+        except (PermissionError, OSError) as e:
             logger.error(f"File write failed: {e}")
             return {"success": False, "error": str(e)}
 
@@ -323,36 +323,89 @@ Supports: +, -, *, /, **, sqrt, sin, cos, tan, log, etc."""
             Calculation result
         """
         try:
-            import math
-            import numpy as np
-
-            # Create a safe namespace for evaluation
-            safe_namespace = {
-                "__builtins__": {},
-                "abs": abs,
-                "round": round,
-                "min": min,
-                "max": max,
-                "sum": sum,
-                "sqrt": math.sqrt,
-                "sin": math.sin,
-                "cos": math.cos,
-                "tan": math.tan,
-                "log": math.log,
-                "log10": math.log10,
-                "exp": math.exp,
-                "pi": math.pi,
-                "e": math.e,
-                "np": np,
-            }
-
-            result = eval(expression, safe_namespace)
+            result = _SafeCalculator().evaluate(expression)
 
             return {"success": True, "expression": expression, "result": result}
 
         except Exception as e:
             logger.error(f"Calculation failed: {e}")
             return {"success": False, "error": str(e), "expression": expression}
+
+
+class _SafeCalculator:
+    """Evaluate a deliberately small arithmetic expression grammar."""
+
+    _BINARY_OPERATORS = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+    }
+    _UNARY_OPERATORS = {
+        ast.UAdd: operator.pos,
+        ast.USub: operator.neg,
+    }
+    _FUNCTIONS = {
+        "abs": abs,
+        "round": round,
+        "min": min,
+        "max": max,
+        "sum": sum,
+        "sqrt": math.sqrt,
+        "sin": math.sin,
+        "cos": math.cos,
+        "tan": math.tan,
+        "log": math.log,
+        "log10": math.log10,
+        "exp": math.exp,
+    }
+    _CONSTANTS = {"pi": math.pi, "e": math.e}
+    _MAX_EXPRESSION_LENGTH = 500
+    _MAX_AST_NODES = 100
+    _MAX_POWER = 1_000
+
+    def evaluate(self, expression: str) -> Any:
+        """Parse and evaluate an arithmetic expression without executing Python."""
+        if not expression or len(expression) > self._MAX_EXPRESSION_LENGTH:
+            raise ValueError("Expression must contain between 1 and 500 characters")
+
+        tree = ast.parse(expression, mode="eval")
+        if sum(1 for _ in ast.walk(tree)) > self._MAX_AST_NODES:
+            raise ValueError("Expression is too complex")
+        return self._evaluate_node(tree.body)
+
+    def _evaluate_node(self, node: ast.AST) -> Any:
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
+                raise ValueError("Only numeric constants are allowed")
+            return node.value
+
+        if isinstance(node, ast.Name) and node.id in self._CONSTANTS:
+            return self._CONSTANTS[node.id]
+
+        if isinstance(node, ast.BinOp) and type(node.op) in self._BINARY_OPERATORS:
+            left = self._evaluate_node(node.left)
+            right = self._evaluate_node(node.right)
+            if isinstance(node.op, ast.Pow) and abs(right) > self._MAX_POWER:
+                raise ValueError("Exponent exceeds the safe limit")
+            return self._BINARY_OPERATORS[type(node.op)](left, right)
+
+        if isinstance(node, ast.UnaryOp) and type(node.op) in self._UNARY_OPERATORS:
+            return self._UNARY_OPERATORS[type(node.op)](self._evaluate_node(node.operand))
+
+        if isinstance(node, (ast.List, ast.Tuple)):
+            return [self._evaluate_node(element) for element in node.elts]
+
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            function = self._FUNCTIONS.get(node.func.id)
+            if function is None or node.keywords:
+                raise ValueError("Function is not allowed")
+            return function(*(self._evaluate_node(argument) for argument in node.args))
+
+        raise ValueError(f"Unsupported expression element: {type(node).__name__}")
 
 
 class ToolRegistry:
@@ -394,6 +447,7 @@ class ToolRegistry:
         # PlaywrightBrowserTool — optional, requires playwright
         try:
             from backend.integrations.tools.browser_tool import PlaywrightBrowserTool
+
             self.register_tool(PlaywrightBrowserTool())
         except ImportError:
             logger.info("PlaywrightBrowserTool skipped — playwright not installed")
@@ -403,6 +457,7 @@ class ToolRegistry:
         # TwitterTool — optional, requires tweepy
         try:
             from backend.integrations.tools.twitter_tool import TwitterTool
+
             self.register_tool(TwitterTool())
         except ImportError:
             logger.info("TwitterTool skipped — tweepy not installed")
@@ -412,6 +467,7 @@ class ToolRegistry:
         # RedditTool — optional, requires praw
         try:
             from backend.integrations.tools.reddit_tool import RedditTool
+
             self.register_tool(RedditTool())
         except ImportError:
             logger.info("RedditTool skipped — praw not installed")

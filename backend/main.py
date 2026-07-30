@@ -606,4 +606,10 @@ app.include_router(revenue_router.router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)
+    # Container entrypoint must accept traffic from outside the container.
+    uvicorn.run(
+        "backend.main:app",
+        host="0.0.0.0",  # nosec B104 - container must accept external traffic
+        port=8000,
+        reload=settings.DEBUG,
+    )

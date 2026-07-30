@@ -1,81 +1,150 @@
-# ============================================================
-# Citadel AI — Auto-Versioning Workflow
-# ============================================================
-# Triggers after CI passes on main.
-# Scans commits since last tag using Conventional Commits,
-# bumps VERSION, updates CHANGELOG.md and docker-compose,
-# commits the bump, and creates a git tag.
-#
-# Commit prefix → bump type:
-#   feat!: / BREAKING CHANGE → MAJOR
-#   feat:                    → MINOR
-#   fix: / perf: / refactor: → PATCH
-#   chore: / docs: / ci:     → (no bump)
-#
-# Built with Pride for Obex Blackvault
-# ============================================================
-
+# Prepare release changes only after CI succeeds on protected main. Normal
+# changes produce a pull request; a successfully tested release commit produces
+# the corresponding annotated tag.
 name: Auto Version Bump
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI Pipeline
     branches:
       - main
-    # Never trigger on the version bump commit itself
-    paths-ignore:
-      - "VERSION"
-      - "CHANGELOG.md"
+    types:
+      - completed
 
-# Prevent concurrent version bumps
 concurrency:
-  group: auto-version
+  group: auto-version-main
   cancel-in-progress: false
 
-jobs:
-  version-bump:
-    name: Bump Version
-    runs-on: ubuntu-latest
-    # Skip if the commit message contains [skip ci] or [skip version]
-    if: |
-      !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip version]') &&
-      !contains(github.event.head_commit.message, 'chore(release):')
+permissions:
+  contents: write
+  pull-requests: write
 
-    permissions:
-      contents: write  # Required to push commits and tags
+jobs:
+  release:
+    name: Prepare Release PR or Tag
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout full history
+      - name: Checkout tested main commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history needed for git log since last tag
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+          fetch-depth: 0
 
-      - name: 🐍 Set up Python
+      - name: Verify main still matches the tested commit
+        id: state
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          CURRENT_SHA="$(git rev-parse HEAD)"
+          if [[ "$CURRENT_SHA" != "$TESTED_SHA" ]]; then
+            echo "A newer main commit exists; its CI run will handle versioning."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "current=true" >> "$GITHUB_OUTPUT"
+          if git diff-tree --no-commit-id --name-only -r HEAD | grep -Fxq VERSION; then
+            echo "release_commit=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_commit=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.state.outputs.current == 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: 🔖 Configure git identity
+      - name: Create annotated release tag
+        if: |
+          steps.state.outputs.current == 'true' &&
+          steps.state.outputs.release_commit == 'true'
         run: |
+          VERSION_VALUE="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$VERSION_VALUE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid VERSION value: $VERSION_VALUE" >&2
+            exit 1
+          fi
+          if ! grep -Fq "## [$VERSION_VALUE]" CHANGELOG.md; then
+            echo "CHANGELOG.md has no section for $VERSION_VALUE" >&2
+            exit 1
+          fi
+
+          TAG="v$VERSION_VALUE"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists; nothing to do."
+            exit 0
+          fi
+
           git config user.email "citadel-autoversion@nested-ai.net"
           git config user.name "Citadel AutoVersion"
+          git tag -a "$TAG" -m "Release $TAG" "${{ github.event.workflow_run.head_sha }}"
+          git push origin "$TAG"
 
-      - name: 🔢 Run version bump script
-        id: bump
+      - name: Prepare version files
+        id: prepare
+        if: |
+          steps.state.outputs.current == 'true' &&
+          steps.state.outputs.release_commit == 'false'
         run: |
-          python3 scripts/bump_version.py 2>&1
-          echo "new_version=$(cat VERSION)" >> $GITHUB_OUTPUT
+          python scripts/bump_version.py
+          if git diff --quiet -- VERSION CHANGELOG.md docker-compose.staging.yml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      - name: 📋 Summary
-        if: steps.bump.outcome == 'success'
+          VERSION_VALUE="$(tr -d '[:space:]' < VERSION)"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION_VALUE" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push release branch
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          VERSION_VALUE: ${{ steps.prepare.outputs.version }}
         run: |
-          VERSION=$(cat VERSION)
-          echo "## 🔖 Version Bump" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "New version: **v${VERSION}**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Tag: \`v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Recent CHANGELOG" >> $GITHUB_STEP_SUMMARY
-          head -20 CHANGELOG.md >> $GITHUB_STEP_SUMMARY
+          BRANCH="automation/version-bump"
+          git config user.email "citadel-autoversion@nested-ai.net"
+          git config user.name "Citadel AutoVersion"
+          git checkout -B "$BRANCH"
+          git add VERSION CHANGELOG.md docker-compose.staging.yml
+          git commit -m "chore(release): bump version to $VERSION_VALUE"
+          git push --force-with-lease origin "HEAD:refs/heads/$BRANCH"
+
+      - name: Open or refresh release pull request
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_VALUE: ${{ steps.prepare.outputs.version }}
+        run: |
+          BRANCH="automation/version-bump"
+          TITLE="chore(release): bump version to $VERSION_VALUE"
+          BODY="Automated release preparation after CI passed on main.
+
+          - Updates VERSION, CHANGELOG.md, and docker-compose.staging.yml
+          - Requires the normal protected-branch review and CI gates
+          - Creates tag v$VERSION_VALUE only after this PR is merged and CI passes"
+
+          PR_NUMBER="$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$PR_NUMBER" ]]; then
+            gh pr edit "$PR_NUMBER" --title "$TITLE" --body "$BODY"
+          else
+            gh pr create --base main --head "$BRANCH" --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: Write summary
+        if: always()
+        env:
+          VERSION_VALUE: ${{ steps.prepare.outputs.version }}
+        run: |
+          if [[ "${{ steps.state.outputs.current }}" != "true" ]]; then
+            echo "A newer main commit superseded this run." >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "${{ steps.state.outputs.release_commit }}" == "true" ]]; then
+            echo "Release tag validation completed." >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "${{ steps.prepare.outputs.changed }}" == "true" ]]; then
+            echo "Prepared release PR for v$VERSION_VALUE." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No version-bumping commits were found." >> "$GITHUB_STEP_SUMMARY"
+          fi

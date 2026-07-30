@@ -14,7 +14,9 @@ from __future__ import annotations
 import os
 import shutil
 import sys
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from backend.integrations.mcp.mcp_client import MCPServer
@@ -108,6 +110,13 @@ def _make_external_servers() -> List[MCPServerConfig]:
     if os.getenv("MCP_ENABLE_FILESYSTEM"):
         npx = shutil.which("npx")
         if npx:
+            filesystem_root = Path(
+                os.getenv(
+                    "MCP_FILESYSTEM_ROOT",
+                    str(Path(tempfile.gettempdir()) / "omnipath-mcp"),
+                )
+            ).expanduser()
+            filesystem_root.mkdir(parents=True, exist_ok=True)
             configs.append(
                 MCPServerConfig(
                     name="filesystem",
@@ -118,7 +127,7 @@ def _make_external_servers() -> List[MCPServerConfig]:
                         args=[
                             "-y",
                             "@modelcontextprotocol/server-filesystem",
-                            "/tmp",
+                            str(filesystem_root.resolve()),
                         ],
                         env={**os.environ},
                     ),

@@ -1,5 +1,6 @@
-# Multi-stage build for Omnipath v4.5
-FROM python:3.11-slim AS builder
+# Multi-stage production build for the recovered Omnipath baseline.
+ARG PYTHON_VERSION=3.12
+FROM python:${PYTHON_VERSION}-slim AS builder
 
 WORKDIR /app
 
@@ -15,7 +16,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Final stage
-FROM python:3.11-slim
+FROM python:${PYTHON_VERSION}-slim
 
 WORKDIR /app
 
@@ -25,12 +26,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy the matching Python environment from the builder without hard-coding a
+# minor-version site-packages path.
+COPY --from=builder /usr/local /usr/local
 
 # Copy application code
 COPY backend/ ./backend/
+COPY VERSION ./VERSION
 COPY .env.example .env
 
 # Create non-root user

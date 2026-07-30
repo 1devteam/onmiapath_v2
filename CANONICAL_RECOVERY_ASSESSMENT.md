@@ -91,6 +91,14 @@ Corrections were applied only to this copied tree:
   for `pyreqwest-impersonate`.
 - A clean, branch-local Python 3.12 virtual environment was built from
   `requirements.txt`; `pip check` reported no broken requirements.
+- CI hardening validation:
+  - 937 tests collected; 935 passed, 2 skipped, 0 failed.
+  - Black, Flake8, Ruff, Bandit, Python compilation, and Actionlint passed.
+  - The protected-branch release preparer produced a correct 7.1.5 to 7.1.6
+    patch release in a disposable Git repository without committing, tagging,
+    or pushing.
+  - The Python 3.12 production image built successfully and ran as a non-root
+    user. Its `/health` and `/version` endpoints both reported 7.1.5.
 
 ### Live-service validation
 
@@ -147,9 +155,10 @@ Corrections were applied only to this copied tree:
 4. Deployment dependencies must continue to be installed in a dedicated
    Omnipath virtual environment or container rather than the shared utilities
    environment.
-5. The inherited CI formatting gate is not yet green repository-wide: Black
-   identifies 25 untouched Python files and Flake8 identifies 14 untouched
-   violations. All recovery-touched Python files pass Black, Flake8, and Ruff.
+5. A release pull request created with the repository `GITHUB_TOKEN` may require
+   a maintainer to approve its CI run. Fully unattended release PR validation
+   requires a separately configured GitHub App or narrowly scoped automation
+   token; no broader credential was introduced during recovery.
 
 ## Promotion Gate
 
@@ -166,8 +175,8 @@ Do not replace either source repository with this candidate. Promotion requires:
 
 1. Build a component-level forward-port plan from `v7.5.0-prod` into this
    verified baseline; do not merge the trees wholesale.
-2. Maintain and verify a dedicated Omnipath dependency environment.
-3. Review deployment manifests and security configuration.
-4. Run production-style monitoring, alerting, backup, and smoke-test gates.
+2. Review deployment manifests and remaining security configuration.
+3. Run production-style monitoring, alerting, backup, and smoke-test gates.
+4. Configure a GitHub App token if unattended release-PR CI approval is desired.
 5. Open a provenance-preserving pull request only after the donor forward-port
    and deployment gates are complete.
