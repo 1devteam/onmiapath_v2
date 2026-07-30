@@ -3,9 +3,12 @@ Economy API Routes
 Handles agent credit management, transactions, and marketplace operations
 """
 
-from fastapi import APIRouter, Depends, Query
+import math
+from numbers import Real
+from typing import Any, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from typing import List, Optional
 from datetime import datetime
 
 from backend.economy.resource_marketplace import ResourceMarketplace
@@ -14,6 +17,26 @@ from backend.middleware.auth.auth_middleware import get_current_user
 
 router = APIRouter(prefix="/api/v1/economy", tags=["economy"])
 marketplace = ResourceMarketplace()
+
+
+def _normalize_balance_payload(agent_id: str, raw_balance: Any) -> dict[str, float | str]:
+    """
+    Validate a marketplace balance while preserving the canonical map-key ID.
+
+    Structured payloads may contain their own ``agent_id`` for legacy reasons,
+    but callers must not trust it over the tenant-scoped map key. Numeric legacy
+    payloads remain supported until their remaining producers are removed.
+    """
+    value = raw_balance.get("balance") if isinstance(raw_balance, dict) else raw_balance
+
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise HTTPException(status_code=500, detail="Invalid marketplace balance payload")
+
+    normalized_value = float(value)
+    if not math.isfinite(normalized_value):
+        raise HTTPException(status_code=500, detail="Invalid marketplace balance payload")
+
+    return {"agent_id": agent_id, "balance": normalized_value}
 
 
 class AgentBalance(BaseModel):
@@ -56,11 +79,12 @@ async def get_agent_balances(current_user: User = Depends(get_current_user)):
     balances = await marketplace.get_tenant_balances(current_user.tenant_id)
     return [
         AgentBalance(
-            agent_id=agent_id,
-            balance=balance["balance"],
+            agent_id=normalized["agent_id"],
+            balance=normalized["balance"],
             tenant_id=current_user.tenant_id,
         )
         for agent_id, balance in balances.items()
+        for normalized in [_normalize_balance_payload(agent_id, balance)]
     ]
 
 

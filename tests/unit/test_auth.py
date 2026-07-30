@@ -314,6 +314,14 @@ class TestProtectedEndpoints:
         response = client.get("/api/v1/economy/balance", headers=headers)
         assert response.status_code == 401
 
+    def test_protected_endpoint_rejects_static_admin_bypass_token(self, client):
+        """A donor-era static administrative bypass must never authenticate."""
+        headers = {"Authorization": "Bearer admin-token"}
+        response = client.get("/api/v1/economy/balance", headers=headers)
+
+        assert response.status_code == 401
+        assert response.headers["www-authenticate"] == "Bearer"
+
     def test_public_endpoints_dont_require_auth(self, client):
         """Test that public endpoints work without auth"""
         # Health check should be public

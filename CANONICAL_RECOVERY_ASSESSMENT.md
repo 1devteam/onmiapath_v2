@@ -179,12 +179,13 @@ Do not replace either source repository with this candidate. Promotion requires:
 
 ## Next Engineering Order
 
-1. Execute Slice 1 of `V7_5_DONOR_FORWARD_PORT_PLAN.md`: contract hardening for
-   economy payloads, authentication bypass rejection, and production settings.
+1. Define the balance, overdraft, idempotency, and retention contracts for
+   Slice 2 of `V7_5_DONOR_FORWARD_PORT_PLAN.md` before implementing the atomic
+   economy ledger.
 2. Rotate and audit the provider credential exposed in the donor's committed
    deployment material; do not copy that material into the recovery line.
-3. Implement and validate the atomic economy-ledger and durable cost-governance
-   slices independently.
+3. Implement and validate the atomic economy-ledger and then durable
+   cost-governance slices independently.
 4. Review deployment manifests and run production-style monitoring, alerting,
    backup, restore, and smoke-test gates.
 5. Configure a GitHub App token if unattended release-PR CI approval is desired.

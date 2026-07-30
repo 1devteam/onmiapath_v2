@@ -3,10 +3,61 @@ Omnipath Configuration Management
 Centralized configuration with environment variable support and validation.
 """
 
-from pydantic_settings import BaseSettings
-from pydantic import Field, validator
 from pathlib import Path
 import secrets
+from urllib.parse import urlsplit
+
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+_DEFAULT_SECRET_KEY = secrets.token_urlsafe(32)
+_DEFAULT_JWT_SECRET_KEY = secrets.token_urlsafe(32)
+_LOOPBACK_HOSTS = {  # nosec B104 - validation denylist, never used for binding
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "::1",
+}
+_PLACEHOLDER_FRAGMENTS = (
+    "change_me",
+    "changeme",
+    "replace_me",
+    "your-secret",
+    "your_super_secret",
+)
+
+
+def _production_url_issue(name: str, value: str, allowed_schemes: tuple[str, ...]) -> str | None:
+    """Return a redacted validation issue for an unsafe production service URL."""
+    try:
+        parsed = urlsplit(value)
+        scheme = parsed.scheme.lower()
+        host = parsed.hostname
+    except ValueError:
+        return f"{name} must be a valid service URL"
+
+    if not any(
+        scheme == allowed or scheme.startswith(f"{allowed}+") for allowed in allowed_schemes
+    ):
+        return f"{name} must use one of: {', '.join(allowed_schemes)}"
+    if not host:
+        return f"{name} must include a service hostname"
+    if host.lower() in _LOOPBACK_HOSTS:
+        return f"{name} must not use a loopback or wildcard hostname in production"
+    return None
+
+
+def _production_secret_issue(name: str, value: str, generated_default: str) -> str | None:
+    """Return a redacted validation issue for an unsafe production secret."""
+    lowered = value.lower()
+    if value == generated_default:
+        return f"{name} must be explicitly configured in production"
+    if len(value) < 32:
+        return f"{name} must contain at least 32 characters"
+    if any(fragment in lowered for fragment in _PLACEHOLDER_FRAGMENTS):
+        return f"{name} must not contain a placeholder value"
+    return None
 
 
 def _read_version() -> str:
@@ -20,6 +71,13 @@ def _read_version() -> str:
 
 class Settings(BaseSettings):
     """Application settings with validation."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # Application
     APP_NAME: str = "Omnipath"
@@ -53,8 +111,8 @@ class Settings(BaseSettings):
     FORK_TEMPERATURE: float = 0.7
 
     # Security
-    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
-    JWT_SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    SECRET_KEY: str = _DEFAULT_SECRET_KEY
+    JWT_SECRET_KEY: str = _DEFAULT_JWT_SECRET_KEY
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -112,18 +170,42 @@ class Settings(BaseSettings):
     JAEGER_AGENT_HOST: str = "localhost"
     JAEGER_AGENT_PORT: int = 6831
 
-    @validator("ENVIRONMENT")
-    def validate_environment(cls, v):
-        """Ensure environment is valid."""
-        if v not in ["development", "staging", "production"]:
-            raise ValueError("Invalid environment")
-        return v
+    @model_validator(mode="after")
+    def validate_production_configuration(self) -> "Settings":
+        """Fail before startup when production endpoints or secrets are unsafe."""
+        if self.ENVIRONMENT != "production":
+            return self
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "ignore"  # Ignore unknown environment variables
+        issues = [
+            _production_secret_issue("SECRET_KEY", self.SECRET_KEY, _DEFAULT_SECRET_KEY),
+            _production_secret_issue(
+                "JWT_SECRET_KEY",
+                self.JWT_SECRET_KEY,
+                _DEFAULT_JWT_SECRET_KEY,
+            ),
+            _production_url_issue(
+                "DATABASE_URL",
+                self.DATABASE_URL,
+                ("postgresql", "postgres"),
+            ),
+            _production_url_issue("REDIS_URL", self.REDIS_URL, ("redis", "rediss")),
+        ]
+
+        if self.NATS_ENABLED:
+            issues.append(_production_url_issue("NATS_URL", self.NATS_URL, ("nats", "tls")))
+        if self.OTEL_ENABLED:
+            issues.append(
+                _production_url_issue(
+                    "OTEL_EXPORTER_OTLP_ENDPOINT",
+                    self.OTEL_EXPORTER_OTLP_ENDPOINT,
+                    ("http", "https", "grpc"),
+                )
+            )
+
+        active_issues = [issue for issue in issues if issue]
+        if active_issues:
+            raise ValueError("Unsafe production configuration: " + "; ".join(active_issues))
+        return self
 
 
 # Global settings instance

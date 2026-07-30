@@ -343,8 +343,11 @@ Owner action is required at the provider:
 
 Code-side action:
 
-- Add automated secret scanning to CI.
-- Add sanitized production environment templates.
+- [x] Add automated secret scanning to CI.
+- [x] Add sanitized production environment templates.
+
+Status: **Code-side complete on 2026-07-30.** Provider-side rotation, usage and
+billing review, and deployment-target confirmation remain owner actions.
 
 ### Slice 1: Contract hardening
 
@@ -359,6 +362,12 @@ Acceptance:
 - Full isolated suite remains green.
 - Auth failures remain HTTP 401 with `WWW-Authenticate: Bearer`.
 - No database-backed auth behavior is replaced.
+
+Status: **Complete on 2026-07-30.** The recovery implementation normalizes
+economy balance payloads without trusting embedded agent identifiers, rejects
+malformed or non-finite balances, proves the donor-era static administrative
+token cannot authenticate, and fails production startup for loopback service
+URLs or weak/placeholder secrets. No persistence behavior changed.
 
 ### Slice 2: Atomic economy ledger
 
@@ -436,9 +445,7 @@ Acceptance:
 
 ## Recommended First Implementation
 
-Begin with the code-side portion of Slice 0 by adding secret scanning and
-sanitized environment templates, while the exposed provider credential is
-rotated outside the repository. Then execute Slice 1 contract hardening. These
-changes have the smallest operational blast radius and establish the gates
-needed to prevent the donor's credential, authentication, economy, and settings
-regressions before persistence code changes.
+The code-side portion of Slice 0 and all of Slice 1 are complete. Keep the
+provider-side credential response open until rotation and usage review are
+confirmed. The next implementation is Slice 2, beginning with explicit balance,
+overdraft, idempotency, and retention policy before any ledger code changes.
