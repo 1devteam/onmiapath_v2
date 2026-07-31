@@ -841,6 +841,23 @@ Each commit must leave the branch testable:
 Do not combine untested behavioral patches merely to reduce commit count. Do
 not push a commit whose required local gate is failing.
 
+Commit 1 status: **Complete on 2026-07-30.** The recovery branch now contains:
+
+- exact, context-independent `Decimal`/integer/text conversion to signed 64-bit
+  microcredits;
+- immutable mutation, transaction, result, operation, disposition, and Lua
+  rejection contracts;
+- canonical NFC identifier and idempotency handling;
+- unpadded base64url key components, SHA-256 retry identities, and redacted log
+  references;
+- guarded tenant keyspace construction and the exact nine-key mutation ABI; and
+- focused unit coverage for numeric boundaries, unsupported syntax, Unicode,
+  collision and injection attempts, request hashing, transaction equations,
+  immutability, UTC timestamps, and typed Lua error mapping.
+
+This commit does not connect the new primitives to `ResourceMarketplace` and
+therefore does not change live economy reads or mutations.
+
 ## Implementation Acceptance Checklist
 
 - [ ] Exact integer amounts are used from API boundary through archive.
