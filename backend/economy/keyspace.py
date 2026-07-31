@@ -199,6 +199,11 @@ class EconomyKeyspace:
     def migration_lock(self) -> str:
         return f"{self.prefix}:migration-lock"
 
+    @property
+    def migration_journal(self) -> str:
+        """Return the resumable tenant-migration journal key."""
+        return f"{self.prefix}:migration-journal"
+
     def mutation_keys(self, agent_id: str, idempotency_key: str) -> tuple[str, ...]:
         """Return Lua ``KEYS`` in the approved ABI order."""
         return (
