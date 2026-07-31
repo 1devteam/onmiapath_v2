@@ -382,6 +382,12 @@ Acceptance:
 - Duplicate idempotency keys cannot double-charge or double-reward.
 - Live Redis integration and full suite pass.
 
+Contract status: **Approved on 2026-07-30.** The governing contract is
+`docs/architecture/ECONOMY_LEDGER_CONTRACT.md`. Implementation must include an
+atomic Redis archival outbox and idempotent append-only PostgreSQL archiver; it
+must not treat the unsynchronized agent balance column or tenant-less CQRS
+economy events as authoritative.
+
 ### Slice 3: Durable cost governance
 
 - Introduce an async, tenant-scoped cost-budget store.
