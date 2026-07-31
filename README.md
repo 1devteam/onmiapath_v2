@@ -10,10 +10,31 @@ This is not a toy framework. It is a complete, working system built with the sam
 
 | | |
 |---|---|
-| **Version** | `7.0.1` |
-| **CI Status** | ✅ Passing |
-| **Test Coverage** | 37% (679 tests) |
+| **Version** | `7.1.5` recovery candidate |
+| **CI Status** | ✅ Passing — [Slice 4 checkpoint run](https://github.com/1devteam/onmiapath_v2/actions/runs/30642709117) |
+| **Test Coverage** | 64% (1,138 passed, 2 skipped) |
 | **License** | Proprietary |
+
+---
+
+## Recovery Branch Status
+
+The current canonical recovery candidate is branch
+`recovery/v7.1.5-canonical` at commit `3e1066f`. It preserves the repository's
+history and has passed the full Python suite, static quality and security gates,
+PostgreSQL 15 migration round trips, Redis 7 integration tests, Docker image
+build, and container scan.
+
+Atomic economy-ledger Slices 1–4 are implemented: exact microcredit contracts,
+atomic Redis mutation, append-only PostgreSQL archival, signed legacy inventory,
+reconciliation, fenced migration locking, and archive-to-Redis recovery. Runtime
+callers still use the legacy marketplace path. Caller cutover (Slice 5) is
+intentionally deferred while the project pivots; this branch must not be
+represented as having completed the economy-ledger production cutover.
+
+See the [implementation plan](docs/architecture/ECONOMY_LEDGER_IMPLEMENTATION_PLAN.md),
+[recovery assessment](CANONICAL_RECOVERY_ASSESSMENT.md), and
+[migration/recovery runbook](docs/runbooks/ECONOMY_LEDGER_RECOVERY.md).
 
 ---
 
@@ -139,7 +160,7 @@ Your OmniPath instance is now fully operational.
 ├── k8s/                    # Kubernetes deployment manifests
 ├── monitoring/             # Prometheus, Grafana, and Nginx configurations
 ├── scripts/                # Utility and operational scripts
-├── tests/                  # Unit, integration, and performance tests (670+)
+├── tests/                  # Unit, integration, and performance tests (1,140 collected)
 ├── .env.example            # Template for environment variables
 ├── docker-compose.production.yml # Production-ready Docker Compose stack
 ├── Dockerfile.production   # Hardened production Docker image

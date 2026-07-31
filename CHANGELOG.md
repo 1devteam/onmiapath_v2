@@ -1,3 +1,35 @@
+## Unreleased — Canonical Recovery Branch
+
+### Recovery
+
+- Reconstructed and hardened the v7.1.5 canonical recovery candidate without
+  replacing either source repository or rewriting history.
+- Restored clean Python 3.12, PostgreSQL 15, Redis 7, NATS, OpenTelemetry,
+  Prometheus, MCP, Docker, security, and CI validation baselines.
+
+### Atomic Economy Ledger — Slices 1–4
+
+- Added exact signed-64-bit microcredit contracts, canonical identifiers,
+  hashed idempotency identities, and typed mutation outcomes (`1695f8f`).
+- Added atomic Redis Lua mutation, immutable streams/outbox, replay-safe
+  idempotency, and legacy-shaped compatibility boundaries (`686e0fb`).
+- Added the append-only PostgreSQL archive, transactional checkpointing, and
+  replay-safe Redis acknowledgement (`aa41146`).
+- Added signed legacy inventory, fail-closed quarantine, deterministic import
+  identities, fenced migration locks, archive reconciliation, and guarded
+  archive-to-Redis recovery (`3e1066f`).
+
+### Verification and Deferred Work
+
+- Full local result: 1,138 passed, 2 skipped; 64% aggregate coverage.
+- GitHub Actions run `30642709117` passed code quality, static security, the
+  complete test suite, Docker build, and image scan.
+- Caller migration and production cutover remain deferred. Runtime economy
+  behavior is still legacy; no legacy data deletion or destructive retention
+  action is authorized.
+
+---
+
 ## [7.1.5] — 2026-03-17
 
 ### Bug Fixes & Improvements

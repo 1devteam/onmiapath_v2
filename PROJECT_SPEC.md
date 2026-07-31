@@ -1,4 +1,13 @@
 # OMNIPATH V2 - PROJECT SPECIFICATION
+
+> **Recovery notice (2026-07-31):** This document preserves the v5-era product
+> specification and historical implementation plan. The current canonical
+> recovery candidate is version 7.1.5 on `recovery/v7.1.5-canonical`. For the
+> verified present state, use `CANONICAL_RECOVERY_ASSESSMENT.md`; for economy
+> ledger status, use `docs/architecture/ECONOMY_LEDGER_IMPLEMENTATION_PLAN.md`.
+> Economy-ledger Commits 1–4 are complete, while caller cutover and subsequent
+> production gates are deferred pending the approved project pivot.
+
 **Version**: 5.0 (In Progress)  
 **Owner**: Obex Blackvault  
 **Repository**: github.com/1devteam/onmiapath_v2  

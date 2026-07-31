@@ -1,7 +1,7 @@
 # Omnipath Canonical Recovery Assessment
 
-Date: 2026-07-30
-Status: Recovery branch candidate; code and live-service baselines verified
+Date: 2026-07-31
+Status: Recovery branch candidate; ledger Slices 1–4 and CI baselines verified
 Source: `/home/inmoa/projects/omnipath_v2`
 Source commit: `f592f971bc81a1432a5f343e1381aeff49626d8e`
 Source remote: `git@github.com:1devteam/onmiapath_v2.git` (verified as a real,
@@ -29,6 +29,21 @@ current minimal baseline. Its 23 tests pass, its latest commit is newer
 
 These roles prevent a broad but partially broken recovery from overwriting a
 smaller working implementation.
+
+### 2026-07-31 checkpoint
+
+The canonical recovery branch has advanced through economy-ledger Commit 4 at
+`3e1066f6b9de070362fd5e5562d7b27667c13c04`. Slices 1–4 provide exact amount
+and mutation contracts, atomic Redis state, append-only PostgreSQL archival,
+signed legacy inventory, reconciliation, fenced migration locking, and guarded
+archive-to-Redis recovery. The full local suite reports 1,138 passed and 2
+skipped with 64% aggregate coverage. GitHub Actions run `30642709117` passed all
+quality, security, test, Docker-build, and image-scan jobs.
+
+This checkpoint does not promote the branch or switch runtime callers. Economy
+caller migration (Commit 5), production configuration/operations (Commit 6),
+and final acceptance evidence (Commit 7) remain incomplete and are deferred
+while Obex Blackvault defines the project pivot.
 
 ## Preservation
 
@@ -155,9 +170,10 @@ Corrections were applied only to this copied tree:
 1. Two specialized-agent tests remain intentionally skipped.
 2. Grafana dashboards, alert delivery, backup/restore, load targets, and a
    production-style deployment have not been exercised in this recovery pass.
-3. Version declarations still conflict across recovered files. Repository
-   identity is now resolved: `onmiapath_v2` and `omnipath` are separate real
-   repositories and must remain distinct.
+3. Historical version declarations remain in older planning documents. The
+   recovery candidate and root README now identify version 7.1.5; repository
+   identity remains resolved, and `onmiapath_v2` and `omnipath` must remain
+   distinct.
 4. Deployment dependencies must continue to be installed in a dedicated
    Omnipath virtual environment or container rather than the shared utilities
    environment.
@@ -179,13 +195,14 @@ Do not replace either source repository with this candidate. Promotion requires:
 
 ## Next Engineering Order
 
-1. Define the balance, overdraft, idempotency, and retention contracts for
-   Slice 2 of `V7_5_DONOR_FORWARD_PORT_PLAN.md` before implementing the atomic
-   economy ledger.
+1. Record and approve the new project direction before starting additional
+   behavioral work. Economy-ledger caller cutover remains paused at the clean
+   Commit 4 boundary.
 2. Rotate and audit the provider credential exposed in the donor's committed
    deployment material; do not copy that material into the recovery line.
-3. Implement and validate the atomic economy-ledger and then durable
-   cost-governance slices independently.
+3. If the economy-ledger program resumes, continue with Commit 5 caller
+   migration, then Commits 6–7 operational and acceptance gates; do not skip
+   directly to production cutover.
 4. Review deployment manifests and run production-style monitoring, alerting,
    backup, restore, and smoke-test gates.
 5. Configure a GitHub App token if unattended release-PR CI approval is desired.

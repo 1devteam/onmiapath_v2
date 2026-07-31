@@ -1,6 +1,6 @@
 # Economy Ledger Implementation Plan
 
-**Status:** Ready for implementation
+**Status:** Commits 1–4 complete; Commit 5 deferred for project pivot
 
 **Governing contract:** `docs/architecture/ECONOMY_LEDGER_CONTRACT.md`
 
@@ -921,6 +921,32 @@ Runtime role grants remain deployment-specific and are intentionally assigned
 with production configuration in Commit 6. Migration/reconciliation tooling
 and caller cutover remain assigned to Commits 4 and 5.
 
+Commit 4 status: **Complete on 2026-07-31 at `3e1066f`.** The recovery branch
+now also contains:
+
+- read-only legacy discovery using Redis `SCAN`, with key type, cardinality,
+  memory use, encoding status, and canonical content checksums;
+- HMAC-SHA256 signed migration manifests and signed-state comparison before a
+  later cutover;
+- exact legacy balance reconstruction, deterministic UUIDv5 import identities,
+  and fail-closed quarantine for malformed, irreconcilable, or potentially
+  truncated 10,000-record histories;
+- expiring compare-owner migration locks whose release cannot delete a
+  successor's lock;
+- archive reconciliation for tenant boundaries, contiguous sequence,
+  checksums, duplicate identities, opening-grant pairing, and agent balance
+  chains;
+- atomic archive-to-empty-Redis recovery of tenant/agent streams, balances,
+  idempotency replay state, archive metadata, and a hashed-owner migration
+  journal, with no overwrite or deletion path; and
+- an operator inventory command, recovery runbook, focused unit/failure tests,
+  and a live Redis drill proving post-restore idempotent replay.
+
+Commit 4 passed 1,138 tests with 2 intentional skips, PostgreSQL 15 migration
+downgrade/upgrade, formatting, lint, type, security, Docker build, image scan,
+and GitHub Actions run `30642709117`. Commit 5 caller migration is not started
+and is explicitly deferred pending the project pivot.
+
 ## Implementation Acceptance Checklist
 
 - [ ] Exact integer amounts are used from API boundary through archive.
@@ -932,7 +958,7 @@ and caller cutover remain assigned to Commits 4 and 5.
 - [x] Archive rows are tenant-scoped, append-only, checksummed, and replayable.
 - [x] Outbox redelivery and PostgreSQL acknowledgement failure are harmless.
 - [ ] Lag and memory circuit breakers fail closed and recover with hysteresis.
-- [ ] Legacy conversion quarantines incomplete or irreconcilable histories.
+- [x] Legacy conversion quarantines incomplete or irreconcilable histories.
 - [ ] Top-up is exactly distributed and resumable.
 - [ ] Mission and saga retries cannot duplicate charges, rewards, or refunds.
 - [ ] Slice 2 does not claim true reservation semantics.

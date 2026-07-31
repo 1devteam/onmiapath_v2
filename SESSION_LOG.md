@@ -7,6 +7,24 @@
 
 ---
 
+## 2026-07-31: Canonical Recovery and Economy-Ledger Pivot Checkpoint
+
+* **Branch**: `recovery/v7.1.5-canonical`
+* **Checkpoint commit**: `3e1066f` (`feat(economy): add migration recovery tooling`)
+* **Completed**: Canonical recovery plus atomic economy-ledger Commits 1–4:
+  exact contracts, atomic Redis mutation, append-only PostgreSQL archival,
+  signed legacy inventory, reconciliation, fenced locks, and guarded recovery.
+* **Validation**: 1,138 passed, 2 skipped locally; formatting, lint, mypy,
+  Bandit, Alembic downgrade/upgrade, Docker build, and image scan passed.
+  GitHub Actions run `30642709117` is green for the exact checkpoint SHA.
+* **Safety state**: Runtime callers remain on the legacy marketplace. No
+  production cutover, legacy deletion, retention trimming, or repository
+  promotion has occurred.
+* **Decision**: Commit 5 caller migration is deferred. The next behavioral
+  change must follow a separately defined and approved project pivot.
+
+---
+
 ## 2026-03-02: Phases 1-5 Retrospective Log
 
 This initial entry is a retroactive summary of the work completed to bring the system to the v6.4 state, based on the git commit history.
