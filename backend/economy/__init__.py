@@ -17,6 +17,10 @@ from backend.economy.contracts import (
     MutationDisposition,
 )
 from backend.economy.keyspace import EconomyKeyspace
+from backend.economy.redis_ledger import (
+    RedisEconomyLedger,
+    RedisLedgerCompatibilityFacade,
+)
 
 __all__ = [
     "EconomyKeyspace",
@@ -30,6 +34,8 @@ __all__ = [
     "MICROCREDITS_PER_CREDIT",
     "MIN_INT64",
     "MutationDisposition",
+    "RedisEconomyLedger",
+    "RedisLedgerCompatibilityFacade",
     "format_credit_amount",
     "parse_credit_amount",
 ]

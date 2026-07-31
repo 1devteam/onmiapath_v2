@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 
 LEDGER_SCHEMA_VERSION = 1
+LEDGER_KEYSPACE_VERSION = 2
 MAX_IDENTIFIER_BYTES = 128
 MIN_IDEMPOTENCY_KEY_BYTES = 16
 MAX_IDEMPOTENCY_KEY_BYTES = 128
@@ -158,7 +159,7 @@ class EconomyKeyspace:
     @property
     def prefix(self) -> str:
         """Return the versioned tenant key prefix."""
-        return f"op:econ:v{LEDGER_SCHEMA_VERSION}:{self.hash_tag}"
+        return f"op:econ:v{LEDGER_KEYSPACE_VERSION}:{self.hash_tag}"
 
     @property
     def meta(self) -> str:

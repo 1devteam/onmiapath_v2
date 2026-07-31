@@ -319,35 +319,48 @@ changing this rule.
 9 migration lock
 ```
 
-`ARGV` contains fixed-position ASCII or canonical JSON values:
+Storage-generation version and record-schema version are independent:
+`op:econ:v2` is the key namespace while stored records use
+`schema_version=1`. Code must not derive one from the other.
+
+`ARGV` contains these fixed-position ASCII or application-canonicalized JSON
+values:
 
 ```text
 1 schema_version
 2 operation
 3 amount_microcredits
 4 agent_id
-5 agent_type
-6 request_hash
-7 transaction_id
-8 transaction_created_at
-9 transaction_record_json_prefix
-10 transaction_record_json_suffix
-11 opening_transaction_id
-12 opening_created_at
-13 opening_record_json_prefix
-14 opening_record_json_suffix
-15 opening_grant_microcredits
-16 archive_hard_limit_records
-17 archive_hard_limit_age_ms
-18 now_epoch_ms
+5 agent_id_json
+6 agent_type
+7 resource_type_json
+8 reason_json
+9 mission_id_json
+10 tenant_id_json
+11 request_hash
+12 idempotency_key_hash
+13 transaction_id
+14 transaction_id_json
+15 transaction_created_at_json
+16 opening_transaction_id
+17 opening_transaction_id_json
+18 opening_created_at_json
+19 opening_idempotency_key_hash
+20 opening_request_hash
+21 opening_grant_microcredits
+22 archive_hard_limit_records
+23 archive_hard_limit_age_ms
+24 now_epoch_ms
 ```
 
-Each JSON prefix ends immediately before the decimal `outbox_sequence` value,
-and its suffix begins immediately after that value. Lua concatenates prefix,
-checked integer sequence, and suffix. This avoids `cjson` and Lua-number
-serialization, which cannot preserve every signed 64-bit integer. All other
-record fields and both fragments are canonicalized by the application and
-validated before script execution.
+The earlier 18-argument prefix/suffix proposal was corrected before Lua
+implementation: Python cannot preconstruct a canonical record containing
+`balance_before_microcredits`, `balance_after_microcredits`, delta, and sequence
+because those values are determined only inside the atomic execution. The
+application now validates and canonicalizes every static value. Lua assembles
+the final canonical record in fixed key order and inserts all dynamic integers
+as checked decimal strings. `cjson` is used only to validate/decode JSON string
+arguments, never to parse or serialize an authoritative integer.
 
 Lua must not use `tonumber` for balances, amounts, totals, or sequences.
 `mutate_v1.lua` implements bounded signed-decimal string validation,
@@ -857,6 +870,33 @@ Commit 1 status: **Complete on 2026-07-30.** The recovery branch now contains:
 
 This commit does not connect the new primitives to `ResourceMarketplace` and
 therefore does not change live economy reads or mutations.
+
+Commit 2 status: **Complete on 2026-07-30.** The recovery branch now also
+contains:
+
+- packaged `mutate_v1.lua` execution loaded through `importlib.resources`, with
+  cached SHA execution and one safe `NOSCRIPT` reload;
+- string-only checked signed-64-bit arithmetic for balances, totals, deltas,
+  archive counts, timestamps, and tenant sequences;
+- complete preflight for the nine-key ABI, persisted schemas, key types,
+  balance/archive equations, idempotency records, overdraft, overflow,
+  migration locks, quarantine, and archive/memory circuit state;
+- one atomic opening-grant plus charge/reward commit across balance, agent
+  directory, tenant/agent streams, archival outbox, metadata, and replay state;
+- strict result reconstruction and request/result identity verification in the
+  Redis adapter;
+- an opt-in legacy-shaped compatibility facade that converts to floats only at
+  the existing response boundary and never falls back after Redis failure;
+- a Redis 7 CI service and live tests for contention, exact boundaries,
+  replay/conflict, all wrong-key-type positions, corruption, circuit breakers,
+  tenant isolation, stream identity, and `NOSCRIPT`; and
+- the approved correction separating keyspace generation `v2` from record
+  schema version `1` and replacing the impossible JSON prefix/suffix ABI.
+
+The legacy `ResourceMarketplace` remains the configured runtime default during
+Phase 0. Caller cutover, top-up migration, metrics, archive acknowledgement,
+AOF restart drills, and mode configuration remain assigned to their later
+commits; this status does not claim those Slice 2 gates are complete.
 
 ## Implementation Acceptance Checklist
 

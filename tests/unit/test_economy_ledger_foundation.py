@@ -234,7 +234,7 @@ class TestEconomyKeyspace:
         keyspace = EconomyKeyspace.for_tenant("tenant-1")
         agent_token = encode_key_component("agent-1")
         digest = idempotency_digest("mission:123:step:1")
-        prefix = f"op:econ:v1:{{econ:{encode_key_component('tenant-1')}}}"
+        prefix = f"op:econ:v2:{{econ:{encode_key_component('tenant-1')}}}"
 
         assert keyspace.prefix == prefix
         assert keyspace.meta == f"{prefix}:meta"
