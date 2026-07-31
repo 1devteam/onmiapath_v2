@@ -388,6 +388,11 @@ atomic Redis archival outbox and idempotent append-only PostgreSQL archiver; it
 must not treat the unsynchronized agent balance column or tenant-less CQRS
 economy events as authoritative.
 
+Implementation design status: **Ready on 2026-07-30.** Exact storage, Lua ABI,
+archive schema, caller idempotency, migration, rollback, observability, and test
+gates are defined in
+`docs/architecture/ECONOMY_LEDGER_IMPLEMENTATION_PLAN.md`.
+
 ### Slice 3: Durable cost governance
 
 - Introduce an async, tenant-scoped cost-budget store.

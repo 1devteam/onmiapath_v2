@@ -10,6 +10,9 @@
 
 **Date:** 2026-07-30
 
+**Implementation plan:**
+`docs/architecture/ECONOMY_LEDGER_IMPLEMENTATION_PLAN.md`
+
 ## Purpose
 
 This contract defines the correctness boundary for agent credit mutations before
