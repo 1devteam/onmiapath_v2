@@ -898,6 +898,29 @@ Phase 0. Caller cutover, top-up migration, metrics, archive acknowledgement,
 AOF restart drills, and mode configuration remain assigned to their later
 commits; this status does not claim those Slice 2 gates are complete.
 
+Commit 3 status: **Complete on 2026-07-31.** The recovery branch now also
+contains:
+
+- PostgreSQL archive, checkpoint, and resumable top-up ORM models plus a
+  PostgreSQL 15 Alembic revision with exact constraints and query indexes;
+- a database trigger that rejects archive updates and deletes;
+- strict canonical outbox parsing, SHA-256 verification, tenant-boundary and
+  contiguous-sequence enforcement;
+- bounded consumer-group processing with abandoned-entry claiming, immutable
+  conflict comparison, transactional checkpoint advancement, and tenant
+  quarantine on corruption;
+- an atomic, replay-safe Redis acknowledgement script using decimal-string
+  arithmetic for full signed-64-bit sequence safety;
+- live PostgreSQL 15 and Redis 7 coverage for append-only enforcement,
+  duplicate delivery, acknowledgement loss, corrupt conflicts, and partial
+  lag advancement; and
+- PostgreSQL-backed CI plus a successful migration downgrade/upgrade round
+  trip, full test suite, lint, formatting, compilation, and security gates.
+
+Runtime role grants remain deployment-specific and are intentionally assigned
+with production configuration in Commit 6. Migration/reconciliation tooling
+and caller cutover remain assigned to Commits 4 and 5.
+
 ## Implementation Acceptance Checklist
 
 - [ ] Exact integer amounts are used from API boundary through archive.
@@ -906,8 +929,8 @@ commits; this status does not claim those Slice 2 gates are complete.
 - [ ] Opening grant, requested mutation, all indexes, outbox, and idempotency
       commit atomically.
 - [ ] Redis outage cannot fall through to production memory mutation.
-- [ ] Archive rows are tenant-scoped, append-only, checksummed, and replayable.
-- [ ] Outbox redelivery and PostgreSQL acknowledgement failure are harmless.
+- [x] Archive rows are tenant-scoped, append-only, checksummed, and replayable.
+- [x] Outbox redelivery and PostgreSQL acknowledgement failure are harmless.
 - [ ] Lag and memory circuit breakers fail closed and recover with hysteresis.
 - [ ] Legacy conversion quarantines incomplete or irreconcilable histories.
 - [ ] Top-up is exactly distributed and resumable.

@@ -65,6 +65,18 @@ jobs:
       - quality
     timeout-minutes: 15
     services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: economy_test
+          POSTGRES_DB: omnipath_economy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d omnipath_economy_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
@@ -76,6 +88,7 @@ jobs:
           --health-retries 10
     env:
       ECONOMY_TEST_REDIS_URL: redis://localhost:6379/15
+      ECONOMY_TEST_POSTGRES_URL: postgresql+asyncpg://postgres:economy_test@localhost:5432/omnipath_economy_test
 
     steps:
       - name: Checkout code
@@ -97,6 +110,8 @@ jobs:
 
       - name: Run complete test suite
         run: |
+          DATABASE_URL=postgresql://postgres:economy_test@localhost:5432/omnipath_economy_test \
+            alembic upgrade head
           pytest -q \
             --cov-report=xml \
             --json-report \
